@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dist="http://schemas.android.com/apk/distribution"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.xinbida.tangsengdaodao">
+
+    <queries>
+        <package android:name="com.tencent.mm" />
+    </queries>
+
+    <dist:module dist:instant="true" />
+
+    <uses-permission
+        android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.WRITE_MEDIA_STORAGE"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--高德地图新增权限-->
+    <!--这个权限用于获取wifi的获取权限，wifi信息会用来进行网络定位-->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission
+        android:name="android.permission.CHANGE_CONFIGURATION"
+        tools:ignore="ProtectedPermissions" />
+    <!-- 可以提高室内定位的精确度 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- 可以提高室内定位的精确度 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
+    <!-- 这个权限用于进行网络定位 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- 这个权限用于访问GPS定位 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <!--    Android 13版本适配，细化存储权限-->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!--    Android 13版本适配，通知权限-->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+    <!--视频拍摄权限-->
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
+
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.READ_LOGS"
+        tools:ignore="ProtectedPermissions" />
+    <permission android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ReservedSystemPermission" />
+    <!--华为推送权限-->
+    <!--HMS-SDK引导升级HMS功能，保存下载的升级包需要SD卡写权限 | HMS-SDK upgrade HMS Feature, save downloaded upgrade pack requires SD card Write permission-->
+    <!--检测网络状态 | Detecting Network status-->
+    <!--检测wifi状态 | Detecting WiFi status-->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!--获取用户手机的IMEI，用来唯一的标识设备。 | Gets the IMEI of the user's phone, used to uniquely identify the device.-->
+    <!-- Android O版本调用安装需要使用该权限 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <!--小米推送-->
+    <uses-permission android:name="android.permission.GET_TASKS" />
+    <permission
+        android:name="${applicationId}.permission.MIPUSH_RECEIVE"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="${applicationId}.permission.MIPUSH_RECEIVE" />
+
+    <queries package="${applicationId}">
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE">
+
+            </action>
+        </intent>
+        <intent>
+            <action android:name="android.media.action.ACTION_VIDEO_CAPTURE">
+
+            </action>
+        </intent>
+    </queries>
+
+    <application
+        android:name="com.xinbida.tangsengdaodao.TSApplication"
+        android:allowBackup="true"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_logo"
+        android:label="@string/app_name"
+        android:preserveLegacyExternalStorage="true"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@mipmap/ic_logo_round"
+        android:screenOrientation="portrait"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true"
+        tools:ignore="GoogleAppIndexingWarning">
+
+        <activity
+            android:name="com.xinbida.tangsengdaodao.MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FullscreenTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity android:name="com.chat.login.ui.LoginAuthActivity" />
+        <activity android:name="com.chat.login.ui.ChooseAreaCodeActivity"
+            android:windowSoftInputMode="adjustPan|stateHidden"/>
+        <activity
+            android:name="com.chat.login.ui.WKLoginActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.chat.login.ui.WKRegisterActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name="com.chat.login.ui.WKWebLoginConfirmActivity"
+            android:launchMode="singleTask" />
+        <activity android:name="com.chat.login.ui.PerfectUserInfoActivity" />
+        <activity android:name="com.chat.login.ui.InputLoginAuthVerifCodeActivity" />
+        <activity android:name="com.chat.login.ui.WKResetLoginPwdActivity" />
+        <activity android:name="com.chat.login.ui.PCLoginViewActivity" />
+        <activity android:name="com.chat.login.ui.WKWebLoginActivity" />
+        <activity android:name="com.chat.login.ui.ThirdLoginActivity" />
+
+        <activity android:name="com.chat.scan.WKScanActivity" />
+        <activity android:name="com.chat.scan.WKScanOtherResultActivity" />
+
+        <!--=================华为推送服务==================================-->
+        <service
+            android:name="com.chat.push.push.HuaweiHmsMessageService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.huawei.push.action.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!--=================华为推送服务END==================================-->
+        <!--************************小米push配置***************************-->
+        <service
+            android:name="com.xiaomi.push.service.XMPushService"
+            android:enabled="true"
+            android:process=":pushservice" />
+
+        <service
+            android:name="com.xiaomi.push.service.XMJobService"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:process=":pushservice" /> <!--注：此service必须在3.0.1版本以后（包括3.0.1版本）加入-->
+
+        <service
+            android:name="com.xiaomi.mipush.sdk.PushMessageHandler"
+            android:enabled="true"
+            android:exported="true" />
+
+        <service
+            android:name="com.xiaomi.mipush.sdk.MessageHandleService"
+            android:enabled="true" /> <!--注：此service必须在2.2.5版本以后（包括2.2.5版本）加入-->
+        <receiver
+            android:name="com.xiaomi.push.service.receivers.NetworkStatusReceiver"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.xiaomi.push.service.receivers.PingReceiver"
+            android:exported="false"
+            android:process=":pushservice">
+            <intent-filter>
+                <action android:name="com.xiaomi.push.PING_TIMER" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.chat.push.push.XiaoMiMessageReceiver"
+            android:exported="true">
+            <!--这里com.xiaomi.mipushdemo.DemoMessageRreceiver改成app中定义的完整类名-->
+            <intent-filter>
+                <action android:name="com.xiaomi.mipush.RECEIVE_MESSAGE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.xiaomi.mipush.MESSAGE_ARRIVED" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.xiaomi.mipush.ERROR" />
+            </intent-filter>
+        </receiver>
+        <!--************************小米push配置END***************************-->
+
+        <!--oppo-->
+        <service
+            android:name="com.chat.push.push.OPPOPushMessageService"
+            android:exported="true"
+            android:permission="com.coloros.mcs.permission.SEND_MCS_MESSAGE">
+            <intent-filter>
+                <action android:name="com.coloros.mcs.action.RECEIVE_MCS_MESSAGE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="com.chat.push.push.OPPOAppPushMessageService"
+            android:exported="true"
+            android:permission="com.heytap.mcs.permission.SEND_PUSH_MESSAGE">
+            <intent-filter>
+                <action android:name="com.heytap.mcs.action.RECEIVE_MCS_MESSAGE" />
+                <action android:name="com.heytap.msp.push.RECEIVE_MCS_MESSAGE" />
+            </intent-filter>
+        </service>
+        <!--华为-->
+        <meta-data
+            android:name="com.huawei.hms.client.appid"
+            android:value="108677047" />
+
+        <!--vivo-->
+        <meta-data
+            android:name="sdk_version_vivo"
+            android:value="484" />
+        <meta-data
+            android:name="com.vivo.push.api_key"
+            android:value="d14dac0803bc8470d9ace9e29657a160" />
+
+        <meta-data
+            android:name="com.vivo.push.app_id"
+            android:value="105660344" />
+
+        <!--push应用定义消息receiver声明-->
+        <receiver
+            android:name="com.chat.push.push.VivoPushMessageReceiverImpl"
+            android:exported="false">
+            <intent-filter>
+                <!--接收push消息-->
+                <action android:name="com.vivo.pushclient.action.RECEIVE" />
+            </intent-filter>
+        </receiver>
+        <service
+            android:name="com.vivo.push.sdk.service.CommandClientService"
+            android:exported="true"
+            android:permission="com.push.permission.UPSTAGESERVICE" />
+
+        <activity android:name="com.chat.uikit.group.DeleteGroupMemberActivity" />
+        <activity
+            android:name="com.chat.uikit.group.GroupNoticeActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name="com.chat.uikit.group.GroupDetailActivity" />
+        <activity android:name="com.chat.uikit.group.SavedGroupsActivity" />
+        <activity android:name="com.chat.uikit.group.UpdateGroupNameActivity" />
+        <activity
+            android:name="com.chat.uikit.chat.ChooseChatActivity"
+            android:windowSoftInputMode="adjustPan|stateHidden" />
+        <activity android:name="com.chat.uikit.search.SearchUserActivity" />
+        <activity android:name="com.chat.uikit.chat.ChatPersonalActivity" />
+        <activity
+            android:name="com.chat.uikit.contacts.ChooseContactsActivity"
+            android:windowSoftInputMode="adjustPan|stateHidden" />
+
+        <activity android:name="com.chat.uikit.contacts.NewFriendsActivity" />
+        <activity android:name="com.chat.uikit.setting.SettingActivity" />
+        <activity android:name="com.chat.uikit.group.GroupQrActivity" />
+        <activity android:name="com.chat.uikit.search.SearchAllActivity" />
+        <activity android:name="com.chat.uikit.user.MyInfoActivity" />
+        <activity android:name="com.chat.uikit.user.UserQrActivity" />
+        <activity android:name="com.chat.uikit.user.MyHeadPortraitActivity" />
+        <activity android:name="com.chat.uikit.setting.MsgNoticesSettingActivity" />
+        <activity
+            android:name="com.chat.uikit.user.UserDetailActivity"
+            android:launchMode="singleTask" />
+        <activity android:name="com.chat.uikit.user.UpdateUserInfoActivity" />
+        <activity android:name="com.chat.uikit.user.SetUserRemarkActivity" />
+        <activity android:name="com.chat.uikit.search.AddFriendsActivity" />
+        <activity android:name="com.chat.uikit.chat.PreviewNewImgActivity" />
+        <activity android:name="com.chat.uikit.search.SearchMsgResultActivity" />
+        <activity android:name="com.chat.uikit.chat.ChatMultiForwardDetailActivity" />
+        <activity android:name="com.chat.uikit.setting.WKThemeSettingActivity" />
+        <activity android:name="com.chat.uikit.setting.WKLanguageActivity" />
+        <activity android:name="com.chat.uikit.group.WKAllMembersActivity" />
+        <activity android:name="com.chat.uikit.user.WKFileHelperActivity" />
+        <activity android:name="com.chat.uikit.user.WKSystemTeamActivity" />
+        <activity android:name="com.chat.uikit.group.WKSetGroupRemarkActivity" />
+        <activity android:name="com.chat.uikit.setting.WKSetFontSizeActivity" />
+        <activity
+            android:name="com.chat.uikit.group.ChooseVideoCallMembersActivity"
+            android:windowSoftInputMode="adjustPan|stateHidden" />
+        <activity android:name="com.chat.uikit.setting.WKAboutActivity" />
+
+        <activity android:name="com.chat.uikit.search.MailListActivity" />
+        <activity android:name="com.chat.uikit.message.BackupRestoreMessageActivity" />
+        <activity android:name="com.chat.uikit.setting.AppModulesActivity" />
+        <activity android:name="com.chat.uikit.setting.ErrorLogsActivity" />
+        <activity
+            android:name="com.chat.uikit.TabActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustPan"
+            android:launchMode="singleTask"/>
+        <activity android:name="com.chat.uikit.chat.ChatActivity"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
+        <activity android:name="com.chat.uikit.search.remote.GlobalActivity" />
+        <activity android:name="com.chat.uikit.chat.search.MessageRecordActivity" />
+        <activity android:name="com.chat.uikit.chat.search.member.SearchWithMemberActivity" />
+        <activity android:name="com.chat.uikit.chat.search.date.SearchWithDateActivity" />
+        <activity android:name="com.chat.uikit.chat.search.image.SearchWithImgActivity" />
+
+        <service
+            android:name="com.chat.uikit.AliveJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <activity
+            android:name="com.chat.base.act.WKWebViewActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="url"
+                    android:scheme="com.xinbida.tangsengdaodao" />
+            </intent-filter>
+        </activity>
+        <activity android:name="com.chat.base.act.WKCropImageActivity" />
+
+        <service
+            android:name="com.tencent.smtt.export.external.DexClassLoaderProviderService"
+            android:label="dexopt"
+            android:process=":dexopt" />
+        <activity
+            android:name="com.chat.base.act.PlayVideoActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:screenOrientation="portrait" />
+
+    </application>
+
+    <queries>
+        <intent>
+            <action android:name="com.huawei.hms.core.aidlservice" />
+        </intent>
+    </queries>
+</manifest>
