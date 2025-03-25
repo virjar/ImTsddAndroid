@@ -47,7 +47,7 @@ public class WKTypeUtils {
 
     //获取消息设置
     public byte getMsgSetting(WKMsgSetting setting) {
-        return (byte) (setting.receipt << 7  | setting.topic << 3);
+        return (byte) (setting.receipt << 7 | setting.topic << 3);
     }
 
     public int getHeight4(byte data) {//获取高四位
@@ -73,7 +73,15 @@ public class WKTypeUtils {
     }
 
     /**
-     * 获取剩余长度byte[]
+     * <p>
+     * by virjar:此种协议设计非常不合理，可变长度数字仅适合在文件格式压缩过程中用于节省空间大小。对于网络协议常见不合适
+     * <ul>
+     *     <li>可变长度计算将会带来额外内存分配，或者对每个字段进行遍历收集数据长度</li>
+     *     <li>网络报文过长以后极其容易遇到链接数据中断，长报文不适合弱网环境，而IM又是一种弱网环境的场景</li>
+     *     <li>当报文过长，业务应该在上层进行限制，或者在业务侧进行分段。</li>
+     * </ul>
+     * <p>
+     *      * 获取剩余长度byte[]
      *
      * @param length
      * @return

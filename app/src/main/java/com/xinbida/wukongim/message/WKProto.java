@@ -38,7 +38,7 @@ import java.math.BigInteger;
  * 5/21/21 11:28 AM
  * 收发消息转换
  */
-class WKProto {
+public class WKProto {
     private final String TAG = "WKProto";
 
     private WKProto() {
@@ -52,13 +52,11 @@ class WKProto {
         return MessageConvertHandlerBinder.msgConvert;
     }
 
-    byte[] encodeMsg(WKBaseMsg msg) {
+   public byte[] encodeMsg(WKBaseMsg msg) {
         byte[] bytes = null;
         if (msg.packetType == WKMsgType.CONNECT) {
             // 连接
             bytes = WKProto.getInstance().enConnectMsg((WKConnectMsg) msg);
-//            String str = Arrays.toString(bytes);
-//            WKLoggerUtils.getInstance().e(str);
         } else if (msg.packetType == WKMsgType.REVACK) {
             // 收到消息回执
             bytes = WKProto.getInstance().enReceivedAckMsg((WKReceivedAckMsg) msg);
@@ -99,7 +97,9 @@ class WKProto {
 
         int totalLen = 1 + remainingBytes.length + 8 + 4;
         WKWrite wkWrite = new WKWrite(totalLen);
-        wkWrite.writeByte(WKTypeUtils.getInstance().getHeader(receivedAckMsg.packetType, receivedAckMsg.no_persist ? 1 : 0, receivedAckMsg.red_dot ? 1 : 0, receivedAckMsg.sync_once ? 1 : 0));
+        wkWrite.writeByte(WKTypeUtils.getInstance().getHeader(
+                receivedAckMsg.packetType, receivedAckMsg.no_persist ? 1 : 0, receivedAckMsg.red_dot ? 1 : 0, receivedAckMsg.sync_once ? 1 : 0)
+        );
         wkWrite.writeBytes(remainingBytes);
         BigInteger bigInteger = new BigInteger(receivedAckMsg.messageID);
         wkWrite.writeLong(bigInteger.longValue());
