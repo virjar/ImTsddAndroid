@@ -377,7 +377,7 @@ public class WKProto {
         return sendMsg;
     }
 
-    WKMsg baseMsg2WKMsg(WKBaseMsg baseMsg) {
+    public WKMsg baseMsg2WKMsg(WKBaseMsg baseMsg) {
         WKReceivedMsg receivedMsg = (WKReceivedMsg) baseMsg;
         WKMsg msg = new WKMsg();
         msg.channelType = receivedMsg.channelType;

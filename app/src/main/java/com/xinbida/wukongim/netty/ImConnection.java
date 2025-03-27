@@ -1,7 +1,18 @@
 package com.xinbida.wukongim.netty;
 
 import com.chat.base.utils.WKLogUtils;
+import com.xinbida.wukongim.WKIM;
+import com.xinbida.wukongim.db.MsgDbManager;
+import com.xinbida.wukongim.entity.WKMsg;
+import com.xinbida.wukongim.interfaces.IReceivedMsgListener;
+import com.xinbida.wukongim.message.MessageHandler;
+import com.xinbida.wukongim.message.WKProto;
+import com.xinbida.wukongim.message.type.WKMsgType;
 import com.xinbida.wukongim.protocol.WKBaseMsg;
+import com.xinbida.wukongim.protocol.WKConnectAckMsg;
+import com.xinbida.wukongim.protocol.WKDisconnectMsg;
+import com.xinbida.wukongim.protocol.WKPongMsg;
+import com.xinbida.wukongim.protocol.WKSendAckMsg;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -26,18 +37,20 @@ public class ImConnection extends SimpleChannelInboundHandler<WKBaseMsg> {
 
     private final NioEventLoopGroup workerGroup;
     private final ConnectionListener connectionListener;
+    private final IReceivedMsgListener mIReceivedMsgListener;
 
     private final Channel lowLevelConnection;
 
     public ImConnection(String host, int port, int connectionTimeout,
                         ImClient imClient, NioEventLoopGroup workerGroup,
-                        ConnectionListener connectionListener) {
+                        ConnectionListener connectionListener, IReceivedMsgListener iReceivedMsgListener) {
         this.host = host;
         this.port = port;
         this.connectionTimeout = connectionTimeout;
         this.imClient = imClient;
         this.workerGroup = workerGroup;
         this.connectionListener = connectionListener;
+        this.mIReceivedMsgListener = iReceivedMsgListener;
         this.lowLevelConnection = connect();
     }
 
@@ -75,6 +88,7 @@ public class ImConnection extends SimpleChannelInboundHandler<WKBaseMsg> {
                 return;
             }
             WKLogUtils.i("connect to " + host + ":" + port + " success");
+            invokeOnConnected();
         });
         return channelFuture.channel();
 
@@ -82,8 +96,43 @@ public class ImConnection extends SimpleChannelInboundHandler<WKBaseMsg> {
 
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, WKBaseMsg msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, WKBaseMsg g_msg) throws Exception {
+        if (g_msg.packetType == WKMsgType.CONNACK) {
+            WKConnectAckMsg loginStatusMsg = (WKConnectAckMsg) g_msg;
+            mIReceivedMsgListener.loginStatusMsg(loginStatusMsg.reasonCode);
+        } else if (g_msg.packetType == WKMsgType.SENDACK) {
+            //发送ack
+            WKSendAckMsg sendAckMsg = (WKSendAckMsg) g_msg;
+            WKMsg wkMsg = null;
+            if (!g_msg.no_persist) {
+                wkMsg = MsgDbManager.getInstance().updateMsgSendStatus(sendAckMsg.clientSeq, sendAckMsg.messageSeq, sendAckMsg.messageID, sendAckMsg.reasonCode);
+            }
+            if (wkMsg == null) {
+                wkMsg = new WKMsg();
+                wkMsg.clientSeq = sendAckMsg.clientSeq;
+                wkMsg.messageID = sendAckMsg.messageID;
+                wkMsg.status = sendAckMsg.reasonCode;
+                wkMsg.messageSeq = (int) sendAckMsg.messageSeq;
+            }
+            WKIM.getInstance().getMsgManager().setSendMsgAck(wkMsg);
 
+            mIReceivedMsgListener
+                    .sendAckMsg(sendAckMsg);
+        } else if (g_msg.packetType == WKMsgType.RECEIVED) {
+            //收到消息
+            WKMsg message = WKProto.getInstance().baseMsg2WKMsg(g_msg);
+//            message.header.noPersist = no_persist == 1;
+//            message.header.redDot = red_dot == 1;
+//            message.header.syncOnce = sync_once == 1;
+            MessageHandler.getInstance().handleReceiveMsg(message);
+            // mIReceivedMsgListener.receiveMsg(message);
+        } else if (g_msg.packetType == WKMsgType.DISCONNECT) {
+            //被踢消息
+            WKDisconnectMsg disconnectMsg = (WKDisconnectMsg) g_msg;
+            mIReceivedMsgListener.kickMsg(disconnectMsg);
+        } else if (g_msg.packetType == WKMsgType.PONG) {
+            mIReceivedMsgListener.pongMsg((WKPongMsg) g_msg);
+        }
     }
 
     @Override
@@ -108,9 +157,9 @@ public class ImConnection extends SimpleChannelInboundHandler<WKBaseMsg> {
         if (connectedInvoked) {
             return;
         }
-        majoraClient.doOnMainThead(() -> {
+        imClient.doOnMainThead(() -> {
             connectedInvoked = true;
-            connectionListener.onConnected(MajoraConnection.this);
+            connectionListener.onConnected(ImConnection.this);
         });
     }
 
@@ -120,9 +169,9 @@ public class ImConnection extends SimpleChannelInboundHandler<WKBaseMsg> {
         if (disconnectInvoked) {
             return;
         }
-        majoraClient.doOnMainThead(() -> {
+        imClient.doOnMainThead(() -> {
             disconnectInvoked = true;
-            connectionListener.onDisconnected(MajoraConnection.this);
+            connectionListener.onDisconnected(ImConnection.this);
         });
     }
 
@@ -135,9 +184,9 @@ public class ImConnection extends SimpleChannelInboundHandler<WKBaseMsg> {
         lowLevelConnection.close();
     }
 
-    void writeToMajora(IProto iProto) {
+    void writeToServer(WKBaseMsg wkBaseMsg) {
         if (lowLevelConnection.isActive()) {
-            lowLevelConnection.writeAndFlush(iProto);
+            lowLevelConnection.writeAndFlush(wkBaseMsg);
         }
     }
 

@@ -99,7 +99,7 @@ class WKTimers {
 
             @Override
             public void run() {
-                if (WKConnection.getInstance().connection == null || heartBeatTimer == null) {
+                if (WKConnection.getInstance().connectionClient == null || heartBeatTimer == null) {
                     WKConnection.getInstance().reconnection();
                 }
                 WKConnection.getInstance().checkHeartIsTimeOut();
@@ -129,7 +129,7 @@ class WKTimers {
                         isForcedReconnect = false;
                     }
                 }
-                if (WKConnection.getInstance().connection == null || !WKConnection.getInstance().connection.isOpen()) {
+                if (WKConnection.getInstance().connectionClient == null || !WKConnection.getInstance().connectionClient.isConnected()) {
                     WKConnection.getInstance().reconnection();
                 }
                 checkNetWorkTimerIsRunning = true;

@@ -74,6 +74,8 @@ android {
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += ("META-INF/INDEX.LIST")
+            excludes += ("META-INF/io.netty.versions.properties")
         }
     }
 }
@@ -151,4 +153,6 @@ dependencies {
     implementation 'org.whispersystems:signal-protocol-android:2.8.1'
     api("io.netty:netty-codec:4.1.90.Final")
     api("io.netty:netty-handler:4.1.90.Final")
+    compileOnly("org.projectlombok:lombok:1.18.24")
+    annotationProcessor("org.projectlombok:lombok:1.18.24")
 }

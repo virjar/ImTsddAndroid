@@ -15,6 +15,7 @@ import com.xinbida.wukongim.manager.CMDManager;
 import com.xinbida.wukongim.manager.ConversationManager;
 import com.xinbida.wukongim.message.type.WKMsgContentType;
 import com.xinbida.wukongim.message.type.WKMsgType;
+import com.xinbida.wukongim.netty.ImClient;
 import com.xinbida.wukongim.protocol.WKBaseMsg;
 import com.xinbida.wukongim.protocol.WKConnectAckMsg;
 import com.xinbida.wukongim.protocol.WKDisconnectMsg;
@@ -59,42 +60,13 @@ public class MessageHandler {
         return MessageHandlerBinder.handler;
     }
 
-    int sendMessage(INonBlockingConnection connection, WKBaseMsg msg) {
+    int sendMessage(ImClient connection, WKBaseMsg msg) {
         if (msg == null) {
             return 1;
         }
-        byte[] bytes = WKProto.getInstance().encodeMsg(msg);
-        if (bytes == null || bytes.length == 0) {
-            WKLoggerUtils.getInstance().e(TAG, "Send unknown message packet:" + msg.packetType);
-            return 1;
-        }
+        connection.writeWkMsg(msg);
 
-        if (connection != null && connection.isOpen()) {
-            try {
-                connection.write(bytes, 0, bytes.length);
-                connection.flush();
-                return 1;
-            } catch (BufferOverflowException e) {
-                WKLoggerUtils.getInstance().e(TAG, "sendMessages Exception BufferOverflowException"
-                        + e.getMessage());
-                return 0;
-            } catch (ClosedChannelException e) {
-                WKLoggerUtils.getInstance().e(TAG, "sendMessages Exception ClosedChannelException"
-                        + e.getMessage());
-                return 0;
-            } catch (SocketTimeoutException e) {
-                WKLoggerUtils.getInstance().e(TAG, "sendMessages Exception SocketTimeoutException"
-                        + e.getMessage());
-                return 0;
-            } catch (IOException e) {
-                WKLoggerUtils.getInstance().e(TAG, "sendMessages Exception IOException" + e.getMessage());
-                return 0;
-            }
-        } else {
-            WKLoggerUtils.getInstance().e("sendMessages Exception sendMessage conn null:"
-                    + connection);
-            return 0;
-        }
+        return 0;
     }
 
 
@@ -226,7 +198,7 @@ public class MessageHandler {
         }
     }
 
-    private void handleReceiveMsg(WKMsg message) {
+    public void handleReceiveMsg(WKMsg message) {
         message = parsingMsg(message);
         if (message.type != WKMsgContentType.WK_INSIDE_MSG) {
             addReceivedMsg(message);
