@@ -39,7 +39,7 @@ import java.math.BigInteger;
  * 收发消息转换
  */
 public class WKProto {
-    private final String TAG = "WKProto";
+    private static final String TAG = "WKProto";
 
     private WKProto() {
     }
@@ -143,7 +143,7 @@ public class WKProto {
         return wkWrite.getWriteBytes();
     }
 
-    private WKConnectAckMsg deConnectAckMsg(WKRead wkRead, int hasServerVersion) {
+    public static WKConnectAckMsg deConnectAckMsg(WKRead wkRead, int hasServerVersion) {
         WKConnectAckMsg connectAckMsg = new WKConnectAckMsg();
         try {
             if (hasServerVersion == 1) {
@@ -169,7 +169,7 @@ public class WKProto {
         return connectAckMsg;
     }
 
-    private WKSendAckMsg deSendAckMsg(WKRead wkRead) {
+    public static WKSendAckMsg deSendAckMsg(WKRead wkRead) {
         WKSendAckMsg sendAckMsg = new WKSendAckMsg();
         try {
             sendAckMsg.messageID = wkRead.readMsgID();
@@ -182,7 +182,7 @@ public class WKProto {
         return sendAckMsg;
     }
 
-    private WKDisconnectMsg deDisconnectMsg(WKRead wkRead) {
+    public static WKDisconnectMsg deDisconnectMsg(WKRead wkRead) {
         WKDisconnectMsg disconnectMsg = new WKDisconnectMsg();
         try {
             disconnectMsg.reasonCode = wkRead.readByte();
@@ -195,7 +195,7 @@ public class WKProto {
         return disconnectMsg;
     }
 
-    private WKReceivedMsg deReceivedMsg(WKRead wkRead) {
+    public static WKReceivedMsg deReceivedMsg(WKRead wkRead) {
         WKReceivedMsg receivedMsg = new WKReceivedMsg();
         try {
             byte settingByte = wkRead.readByte();

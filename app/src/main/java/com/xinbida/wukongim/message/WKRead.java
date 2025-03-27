@@ -11,7 +11,7 @@ import java.math.BigInteger;
 public class WKRead {
     InputStream inputStream;
 
-    WKRead(byte[] bytes) {
+    public WKRead(byte[] bytes) {
         this.inputStream = new ByteArrayInputStream(bytes);
     }
 

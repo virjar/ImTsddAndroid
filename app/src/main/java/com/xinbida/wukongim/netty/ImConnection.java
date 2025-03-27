@@ -51,11 +51,11 @@ public class ImConnection extends SimpleChannelInboundHandler<WKBaseMsg> {
                     @Override
                     public void initChannel(SocketChannel ch) {
                         IdleStateHandler idleStateHandler = new IdleStateHandler(
-                                MajoraClient.HEARTBEAT_INTERVAL + 12, 0, 0
+                                30 + 12, 0, 0
                         );
                         ch.pipeline().addLast(
                                 idleStateHandler, // 超时控制
-
+                                new CodeC(),// 编解码
                                 ImConnection.this // 业务
                         );
 
