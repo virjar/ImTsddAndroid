@@ -144,8 +144,7 @@ public class WKIMUtils {
 //            }
 //        });
 
-        //监听sdk获取IP和port
-        WKIM.getInstance().getConnectionManager().addOnGetIpAndPortListener(andPortListener -> MsgModel.getInstance().getChatIp((code, ip, port) -> andPortListener.onGetSocketIpAndPort(ip, Integer.parseInt(port))));
+
         //消息存库拦截器监听
         WKIM.getInstance().getMsgManager().addMessageStoreBeforeIntercept(msg -> {
             if (msg != null && msg.type == WKContentType.screenshot) {
@@ -363,7 +362,7 @@ public class WKIMUtils {
                             if (groupType == WKGroupType.superGroup) {
                                 String uid = cmd.paramJsonObject.optString("uid");
                                 if (!TextUtils.isEmpty(uid)) {
-                                    UserModel.getInstance().getUserInfo(uid,groupNo,null);
+                                    UserModel.getInstance().getUserInfo(uid, groupNo, null);
                                 }
                             }
                         }

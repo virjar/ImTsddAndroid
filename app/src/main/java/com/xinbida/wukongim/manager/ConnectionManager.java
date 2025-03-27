@@ -2,10 +2,10 @@ package com.xinbida.wukongim.manager;
 
 import android.text.TextUtils;
 
+import com.chat.uikit.message.MsgModel;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.WKIMApplication;
 import com.xinbida.wukongim.interfaces.IConnectionStatus;
-import com.xinbida.wukongim.interfaces.IGetIpAndPort;
 import com.xinbida.wukongim.message.MessageHandler;
 import com.xinbida.wukongim.message.WKConnection;
 import com.xinbida.wukongim.utils.WKLoggerUtils;
@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ConnectionManager extends BaseManager {
     private final String TAG = "ConnectionManager";
+
     private ConnectionManager() {
 
     }
@@ -32,13 +33,12 @@ public class ConnectionManager extends BaseManager {
     }
 
 
-    private IGetIpAndPort iGetIpAndPort;
     private ConcurrentHashMap<String, IConnectionStatus> connectionListenerMap;
 
     // 连接
     public void connection() {
         if (TextUtils.isEmpty(WKIMApplication.getInstance().getToken()) || TextUtils.isEmpty(WKIMApplication.getInstance().getUid())) {
-            WKLoggerUtils.getInstance().e(TAG,"connection Uninitialized UID and token");
+            WKLoggerUtils.getInstance().e(TAG, "connection Uninitialized UID and token");
             return;
         }
         WKIMApplication.getInstance().isCanConnect = true;
@@ -50,7 +50,7 @@ public class ConnectionManager extends BaseManager {
 
     public void disconnect(boolean isLogout) {
         if (TextUtils.isEmpty(WKIMApplication.getInstance().getToken())) return;
-        WKLoggerUtils.getInstance().e(TAG,"disconnect Disconnect is exit :" + isLogout);
+        WKLoggerUtils.getInstance().e(TAG, "disconnect Disconnect is exit :" + isLogout);
         if (isLogout) {
             logoutChat();
         } else {
@@ -70,7 +70,7 @@ public class ConnectionManager extends BaseManager {
      * 退出登录
      */
     private void logoutChat() {
-        WKLoggerUtils.getInstance().e(TAG,"exit");
+        WKLoggerUtils.getInstance().e(TAG, "exit");
         WKIMApplication.getInstance().isCanConnect = false;
         MessageHandler.getInstance().saveReceiveMsg();
 
@@ -86,18 +86,25 @@ public class ConnectionManager extends BaseManager {
     }
 
     public void getIpAndPort(String requestId, IRequestIP iRequestIP) {
-        if (iGetIpAndPort != null) {
-            WKLoggerUtils.getInstance().e(TAG,"getIpAndPort get ip...");
-            runOnMainThread(() -> iGetIpAndPort.getIP((ip, port) -> iRequestIP.onResult(requestId, ip, port)));
-        } else {
-            WKLoggerUtils.getInstance().e(TAG,"Unregistered IP acquisition event");
-        }
+        WKLoggerUtils.getInstance().e(TAG, "getIpAndPort get ip...");
+        runOnMainThread(new ICheckThreadBack() {
+            @Override
+            public void onMainThread() {
+                MsgModel.getInstance()
+                        .getChatIp(new MsgModel.IChatIp() {
+                                       @Override
+                                       public void onResult(int code, String ip, String port) {
+                                           iRequestIP.onResult(requestId, ip, Integer.parseInt(port));
+                                       }
+                                   }
+                        );
+
+
+            }
+        });
     }
 
-    // 监听获取IP和port
-    public void addOnGetIpAndPortListener(IGetIpAndPort iGetIpAndPort) {
-        this.iGetIpAndPort = iGetIpAndPort;
-    }
+
 
     public void setConnectionStatus(int status, String reason) {
         if (connectionListenerMap != null && !connectionListenerMap.isEmpty()) {
