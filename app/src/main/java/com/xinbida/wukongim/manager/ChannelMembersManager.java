@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 
+import com.chat.uikit.group.service.GroupModel;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.db.ChannelMembersDbManager;
 import com.xinbida.wukongim.db.WKDBColumns;
@@ -11,7 +12,6 @@ import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelExtras;
 import com.xinbida.wukongim.entity.WKChannelMember;
 import com.xinbida.wukongim.interfaces.IAddChannelMemberListener;
-import com.xinbida.wukongim.interfaces.IGetChannelMemberList;
 import com.xinbida.wukongim.interfaces.IGetChannelMemberListResult;
 import com.xinbida.wukongim.interfaces.IRefreshChannelMember;
 import com.xinbida.wukongim.interfaces.IRemoveChannelMember;
@@ -43,8 +43,6 @@ public class ChannelMembersManager extends BaseManager {
     private ConcurrentHashMap<String, IRemoveChannelMember> removeChannelMemberMap;//监听添加频道成员
     private ConcurrentHashMap<String, IAddChannelMemberListener> addChannelMemberMap;
     private ISyncChannelMembers syncChannelMembers;
-    //获取频道成员监听
-    private IGetChannelMemberList iGetChannelMemberList;
 
 
     //最大版本成员
@@ -179,18 +177,6 @@ public class ChannelMembersManager extends BaseManager {
     }
 
     /**
-     * 通过状态查询频道成员
-     *
-     * @param channelId   频道ID
-     * @param channelType 频道类型
-     * @param status      状态
-     * @return List<>
-     */
-    public List<WKChannelMember> getWithStatus(String channelId, byte channelType, int status) {
-        return ChannelMembersDbManager.getInstance().queryWithStatus(channelId, channelType, status);
-    }
-
-    /**
      * 修改频道成员备注
      *
      * @param channelID   频道ID
@@ -202,33 +188,7 @@ public class ChannelMembersManager extends BaseManager {
         return ChannelMembersDbManager.getInstance().updateWithField(channelID, channelType, uid, WKDBColumns.WKChannelMembersColumns.member_remark, remarkName);
     }
 
-    /**
-     * 修改频道成员名称
-     *
-     * @param channelID   频道ID
-     * @param channelType 频道类型
-     * @param uid         用户ID
-     * @param name        名称
-     */
-    public boolean updateMemberName(String channelID, byte channelType, String uid, String name) {
-        return ChannelMembersDbManager.getInstance().updateWithField(channelID, channelType, uid, WKDBColumns.WKChannelMembersColumns.member_name, name);
-    }
 
-    /**
-     * 修改频道成员状态
-     *
-     * @param channelId   频道ID
-     * @param channelType 频道类型
-     * @param uid         用户ID
-     * @param status      状态
-     */
-    public boolean updateMemberStatus(String channelId, byte channelType, String uid, int status) {
-        return ChannelMembersDbManager.getInstance().updateWithField(channelId, channelType, uid, WKDBColumns.WKChannelMembersColumns.status, String.valueOf(status));
-    }
-
-    public void addOnGetChannelMembersListener(IGetChannelMemberList iGetChannelMemberList) {
-        this.iGetChannelMemberList = iGetChannelMemberList;
-    }
 
     public void getWithPageOrSearch(String channelID, byte channelType, String searchKey, int page, int limit, @NonNull IGetChannelMemberListResult iGetChannelMemberListResult) {
         List<WKChannelMember> list;
@@ -247,8 +207,8 @@ public class ChannelMembersManager extends BaseManager {
                 groupType = (int) groupTypeObject;
             }
         }
-        if (iGetChannelMemberList != null && groupType == 1) {
-            iGetChannelMemberList.request(channelID, channelType, searchKey, page, limit, list1 -> {
+        if (groupType == 1) {
+            GroupModel.getInstance().getChannelMembers(channelID, searchKey, page, limit, list1 -> {
                 iGetChannelMemberListResult.onResult(list1, true);
                 if (WKCommonUtils.isNotEmpty(list1)) {
                     ChannelMembersDbManager.getInstance().deleteWithChannel(channelID, channelType);

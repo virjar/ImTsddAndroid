@@ -4,7 +4,6 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcelable;
@@ -34,7 +33,6 @@ import com.chat.base.utils.WKReader;
 import com.chat.base.utils.WKTimeUtils;
 import com.chat.base.utils.WKToastUtils;
 import com.chat.base.views.pwdview.NumPwdDialog;
-import com.xinbida.tangsengdaodao.R;
 import com.chat.uikit.WKUIKitApplication;
 import com.chat.uikit.chat.ChatActivity;
 import com.chat.uikit.contacts.service.FriendModel;
@@ -47,6 +45,7 @@ import com.chat.uikit.search.SearchUserActivity;
 import com.chat.uikit.user.UserDetailActivity;
 import com.chat.uikit.user.service.UserModel;
 import com.chat.uikit.utils.PushNotificationHelper;
+import com.xinbida.tangsengdaodao.R;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.entity.WKCMDKeys;
 import com.xinbida.wukongim.entity.WKChannel;
@@ -100,15 +99,11 @@ public class WKIMUtils {
                 Vibrator mVibrator = (Vibrator) WKBaseApplication.getInstance().getContext().getSystemService(Context.VIBRATOR_SERVICE);
                 long[] pattern = {0, 1000, 1000};
                 AudioAttributes audioAttributes;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    audioAttributes = new AudioAttributes.Builder()
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .setUsage(AudioAttributes.USAGE_NOTIFICATION) //key
-                            .build();
-                    mVibrator.vibrate(pattern, 0, audioAttributes);
-                } else {
-                    mVibrator.vibrate(pattern, 0);
-                }
+                audioAttributes = new AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION) //key
+                        .build();
+                mVibrator.vibrate(pattern, 0, audioAttributes);
                 PushNotificationHelper.INSTANCE.notifyCall(WKUIKitApplication.getInstance().getContext(), 2, fromName, WKBaseApplication.getInstance().getContext().getString(R.string.invite_call));
             }
             return null;
@@ -119,29 +114,6 @@ public class WKIMUtils {
             NotificationCompatUtil.Companion.cancel(WKUIKitApplication.getInstance().getContext(), 2);
             return null;
         });
-        // 获取用户密钥
-//        WKIM.getInstance().getSignalProtocolManager().addOnCryptoSignalDataListener((channelID, channelTyp, iCryptoSignalDataResult) -> {
-//            if (channelTyp == WKChannelType.PERSONAL) {
-//                WKCryptoModel.getInstance().getUserKey(channelID, (code, msg, data) -> {
-//                    if (code == HttpResponseCode.success && data != null) {
-//                        WKSignalKey signalKey = new WKSignalKey();
-//                        signalKey.UID = data.uid;
-//                        signalKey.registrationID = data.registration_id;
-//                        signalKey.identityKey = data.identity_key;
-//                        signalKey.signedPubKey = data.signed_pubkey;
-//                        signalKey.signedSignature = data.signed_signature;
-//                        signalKey.signedPreKeyID = data.signed_prekey_id;
-//                        WKOneTimePreKey oneTimePreKey = new WKOneTimePreKey();
-//                        oneTimePreKey.pubKey = data.onetime_prekey.pubkey;
-//                        oneTimePreKey.keyID = data.onetime_prekey.key_id;
-//                        signalKey.oneTimePreKey = oneTimePreKey;
-//                        iCryptoSignalDataResult.onResult(signalKey);
-//                    } else {
-//                        iCryptoSignalDataResult.onResult(null);
-//                    }
-//                });
-//            }
-//        });
 
 
         //消息存库拦截器监听
@@ -285,7 +257,7 @@ public class WKIMUtils {
             WKCommonModel.getInstance().getChannel(channelId, channelType, null);
             return null;
         });
-        WKIM.getInstance().getChannelMembersManager().addOnGetChannelMembersListener((channelID, b, keyword, page, limit, iChannelMemberListResult) -> GroupModel.getInstance().getChannelMembers(channelID, keyword, page, limit, iChannelMemberListResult));
+
 
         //监听频道修改头像
         WKIM.getInstance().getChannelManager().addOnRefreshChannelAvatar((s, b) -> {
