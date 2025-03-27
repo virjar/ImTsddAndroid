@@ -7,7 +7,6 @@ import android.app.job.JobScheduler;
 import android.app.job.JobService;
 import android.content.ComponentName;
 import android.content.Context;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -29,14 +28,8 @@ public class AliveJobService extends JobService {
                 AliveJobService.class.getName())).setPersisted(true);
 
         // 小于7.0
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            // 每隔 1s 执行一次 job
-            // 版本23 开始 进行了改进，最小周期为 5s
-            builder.setPeriodic(1000 * 30);
-        } else {
-            // 延迟执行任务
-            builder.setMinimumLatency(1000);
-        }
+        // 延迟执行任务
+        builder.setMinimumLatency(1000);
 
         jobScheduler.schedule(builder.build());
     }
@@ -48,9 +41,7 @@ public class AliveJobService extends JobService {
             return false;
         }
         // 如果7.0以上 轮询
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            startJob(this);
-        }
+        startJob(this);
 
         WKIM.getInstance().getConnectionManager().connection();
         WKIMUtils.getInstance().initIMListener();

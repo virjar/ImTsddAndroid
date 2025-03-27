@@ -189,8 +189,8 @@ public class ChannelMembersManager extends BaseManager {
     }
 
 
-
-    public void getWithPageOrSearch(String channelID, byte channelType, String searchKey, int page, int limit, @NonNull IGetChannelMemberListResult iGetChannelMemberListResult) {
+    public void getWithPageOrSearch(String channelID, byte channelType, String searchKey, int page, int limit,
+                                    @NonNull IGetChannelMemberListResult iGetChannelMemberListResult) {
         List<WKChannelMember> list;
         if (TextUtils.isEmpty(searchKey)) {
             list = getMembersWithPage(channelID, channelType, page, limit);
@@ -208,15 +208,11 @@ public class ChannelMembersManager extends BaseManager {
             }
         }
         if (groupType == 1) {
-            GroupModel.getInstance().getChannelMembers(channelID, searchKey, page, limit, list1 -> {
-                iGetChannelMemberListResult.onResult(list1, true);
-                if (WKCommonUtils.isNotEmpty(list1)) {
-                    ChannelMembersDbManager.getInstance().deleteWithChannel(channelID, channelType);
-                    save(list1);
-                }
-            });
+            GroupModel.getInstance().getChannelMembers(channelType, iGetChannelMemberListResult, channelID, searchKey, page, limit
+            );
         }
     }
+
 
     /**
      * 添加加入频道成员监听

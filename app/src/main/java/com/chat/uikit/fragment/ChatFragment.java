@@ -449,8 +449,6 @@ public class ChatFragment extends WKBaseFragment<FragChatConversationLayoutBindi
                 setAllCount();
             }
         });
-//        WKIM.getInstance().getConversationManager().addOnRefreshMsgListener("chat_fragment", this::resetData);
-        // 监听连接状态
         WKIM.getInstance().getConnectionManager().addOnConnectionStatusListener("chat_fragment", (i, reason) -> {
             if (wkVBinding.textSwitcher.getTag() != null) {
                 Object tag = wkVBinding.textSwitcher.getTag();
@@ -795,11 +793,6 @@ public class ChatFragment extends WKBaseFragment<FragChatConversationLayoutBindi
         super.onResume();
         int pcOnline = WKSharedPreferencesUtil.getInstance().getInt(WKConfig.getInstance().getUid() + "_pc_online");
         wkVBinding.deviceIv.setVisibility(pcOnline == 1 ? View.VISIBLE : View.GONE);
-//        String appLoginType = String.format(getString(R.string.pc_login), getString(R.string.app_name));
-//        int muteForApp = WKSharedPreferencesUtil.getInstance().getInt(WKConfig.getInstance().getUid() + "_mute_of_app");
-//        if (muteForApp == 1) {
-//            pcLoginTv.setText(String.format("%s %s", appLoginType, getString(R.string.wk_kit_phone_notice_close)));
-//        } else pcLoginTv.setText(appLoginType);
         EndpointManager.getInstance().setMethod("scroll_to_unread_channel", object -> {
             scrollToUnreadChannel();
             return null;

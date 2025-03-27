@@ -10,15 +10,12 @@ import com.xinbida.wukongim.entity.WKChannelType;
 import com.xinbida.wukongim.entity.WKMsg;
 import com.xinbida.wukongim.entity.WKSyncMsg;
 import com.xinbida.wukongim.entity.WKUIConversationMsg;
-import com.xinbida.wukongim.interfaces.IReceivedMsgListener;
 import com.xinbida.wukongim.manager.CMDManager;
-import com.xinbida.wukongim.manager.ConversationManager;
 import com.xinbida.wukongim.message.type.WKMsgContentType;
 import com.xinbida.wukongim.message.type.WKMsgType;
 import com.xinbida.wukongim.protocol.WKBaseMsg;
 import com.xinbida.wukongim.protocol.WKConnectAckMsg;
 import com.xinbida.wukongim.protocol.WKDisconnectMsg;
-import com.xinbida.wukongim.protocol.WKPongMsg;
 import com.xinbida.wukongim.protocol.WKReceivedAckMsg;
 import com.xinbida.wukongim.protocol.WKSendAckMsg;
 import com.xinbida.wukongim.utils.WKCommonUtils;
@@ -101,8 +98,7 @@ public class MessageHandler {
     private List<WKSyncMsg> receivedMsgList;
     private byte[] cacheData = null;
 
-    synchronized void cutBytes(byte[] available_bytes,
-                               IReceivedMsgListener mIReceivedMsgListener) {
+    synchronized void cutBytes(byte[] available_bytes, WKConnection wkConnection) {
 
         if (cacheData == null || cacheData.length == 0) cacheData = available_bytes;
         else {
@@ -135,7 +131,7 @@ public class MessageHandler {
             WKLoggerUtils.getInstance().e(TAG, "packet type" + packetType);
             if (packetType == WKMsgType.PONG) {
                 //心跳ack
-                mIReceivedMsgListener.pongMsg(new WKPongMsg());
+                wkConnection.pongMsg();
                 WKLoggerUtils.getInstance().e(TAG, "pong...");
                 byte[] bytes = Arrays.copyOfRange(lastMsgBytes, 1, lastMsgBytes.length);
                 cacheData = lastMsgBytes = bytes;
@@ -163,14 +159,14 @@ public class MessageHandler {
                         cacheData = lastMsgBytes;
                     } else {
                         byte[] msg = Arrays.copyOfRange(lastMsgBytes, 0, remainingLength + 1 + bytes.length);
-                        acceptMsg(msg, no_persist, sync_once, red_dot, mIReceivedMsgListener);
+                        acceptMsg(msg, no_persist, sync_once, red_dot, wkConnection);
                         byte[] temps = Arrays.copyOfRange(lastMsgBytes, msg.length, lastMsgBytes.length);
                         cacheData = lastMsgBytes = temps;
                     }
 
                 } else {
                     cacheData = null;
-                    mIReceivedMsgListener.reconnect();
+                    wkConnection.reconnect();
                     break;
                 }
             }
@@ -179,7 +175,7 @@ public class MessageHandler {
     }
 
     private void acceptMsg(byte[] bytes, int no_persist, int sync_once, int red_dot,
-                           IReceivedMsgListener mIReceivedMsgListener) {
+                           WKConnection wkConnection) {
 
         if (bytes != null && bytes.length > 0) {
             WKBaseMsg g_msg;
@@ -188,7 +184,7 @@ public class MessageHandler {
                 //连接ack
                 if (g_msg.packetType == WKMsgType.CONNACK) {
                     WKConnectAckMsg loginStatusMsg = (WKConnectAckMsg) g_msg;
-                    mIReceivedMsgListener.loginStatusMsg(loginStatusMsg.reasonCode);
+                    wkConnection.loginStatusMsg(loginStatusMsg.reasonCode);
                 } else if (g_msg.packetType == WKMsgType.SENDACK) {
                     //发送ack
                     WKSendAckMsg sendAckMsg = (WKSendAckMsg) g_msg;
@@ -205,8 +201,7 @@ public class MessageHandler {
                     }
                     WKIM.getInstance().getMsgManager().setSendMsgAck(wkMsg);
 
-                    mIReceivedMsgListener
-                            .sendAckMsg(sendAckMsg);
+                    wkConnection.sendAckMsg(sendAckMsg);
                 } else if (g_msg.packetType == WKMsgType.RECEIVED) {
                     //收到消息
                     WKMsg message = WKProto.getInstance().baseMsg2WKMsg(g_msg);
@@ -217,10 +212,9 @@ public class MessageHandler {
                     // mIReceivedMsgListener.receiveMsg(message);
                 } else if (g_msg.packetType == WKMsgType.DISCONNECT) {
                     //被踢消息
-                    WKDisconnectMsg disconnectMsg = (WKDisconnectMsg) g_msg;
-                    mIReceivedMsgListener.kickMsg(disconnectMsg);
+                    wkConnection.kickMsg();
                 } else if (g_msg.packetType == WKMsgType.PONG) {
-                    mIReceivedMsgListener.pongMsg((WKPongMsg) g_msg);
+                    wkConnection.pongMsg();
                 }
             }
         }
@@ -379,7 +373,7 @@ public class MessageHandler {
 //        for (int i = 0, size = refreshList.size(); i < size; i++) {
 //            ConversationManager.getInstance().setOnRefreshMsg(refreshList.get(i), i == refreshList.size() - 1, "groupMsg");
 //        }
-        WKIM.getInstance().getConversationManager().setOnRefreshMsg(refreshList,"groupMsg");
+        WKIM.getInstance().getConversationManager().setOnRefreshMsg(refreshList, "groupMsg");
     }
 
     public WKMsg parsingMsg(WKMsg message) {

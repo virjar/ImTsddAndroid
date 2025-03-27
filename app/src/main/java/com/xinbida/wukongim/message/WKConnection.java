@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
+import com.chat.uikit.message.MsgModel;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.WKIMApplication;
 import com.xinbida.wukongim.db.MsgDbManager;
@@ -16,7 +17,7 @@ import com.xinbida.wukongim.entity.WKMsg;
 import com.xinbida.wukongim.entity.WKMsgSetting;
 import com.xinbida.wukongim.entity.WKSyncMsgMode;
 import com.xinbida.wukongim.entity.WKUIConversationMsg;
-import com.xinbida.wukongim.interfaces.IReceivedMsgListener;
+import com.xinbida.wukongim.manager.BaseManager;
 import com.xinbida.wukongim.manager.ConnectionManager;
 import com.xinbida.wukongim.message.type.WKConnectReason;
 import com.xinbida.wukongim.message.type.WKConnectStatus;
@@ -28,9 +29,7 @@ import com.xinbida.wukongim.msgmodel.WKMediaMessageContent;
 import com.xinbida.wukongim.msgmodel.WKVideoContent;
 import com.xinbida.wukongim.protocol.WKBaseMsg;
 import com.xinbida.wukongim.protocol.WKConnectMsg;
-import com.xinbida.wukongim.protocol.WKDisconnectMsg;
 import com.xinbida.wukongim.protocol.WKPingMsg;
-import com.xinbida.wukongim.protocol.WKPongMsg;
 import com.xinbida.wukongim.protocol.WKSendAckMsg;
 import com.xinbida.wukongim.protocol.WKSendMsg;
 import com.xinbida.wukongim.utils.DateUtils;
@@ -139,25 +138,32 @@ public class WKConnection {
         // 计算获取IP时长 todo
         startGetConnAddressTimer();
         lastRequestId = UUID.randomUUID().toString().replace("-", "");
-        ConnectionManager.getInstance().getIpAndPort(lastRequestId, (requestId, ip, port) -> {
-            WKLoggerUtils.getInstance().e(TAG, "connection address " + ip + ":" + port);
-            if (TextUtils.isEmpty(ip) || port == 0) {
-                WKLoggerUtils.getInstance().e(TAG, "Return connection IP or port error，" + String.format("ip:%s & port:%s", ip, port));
-                isReConnecting = false;
-                forcedReconnection();
-                return;
-            }
-            if (lastRequestId.equals(requestId)) {
-                WKConnection.this.ip = ip;
-                WKConnection.this.port = port;
-                if (connectionIsNull()) {
-                    connSocket();
-                }
-                return;
-            }
-            if (connectionIsNull()) {
-                WKLoggerUtils.getInstance().e(TAG, "The IP number requested is inconsistent, reconnecting");
-                forcedReconnection();
+
+        WKLoggerUtils.getInstance().e(TAG, "getIpAndPort get ip...");
+        BaseManager.runOnMainThread(new BaseManager.ICheckThreadBack() {
+            @Override
+            public void onMainThread() {
+                MsgModel.getInstance().getChatIp(lastRequestId, (requestId, ip, port) -> {
+                    WKLoggerUtils.getInstance().e(TAG, "connection address " + ip + ":" + port);
+                    if (TextUtils.isEmpty(ip) || port == 0) {
+                        WKLoggerUtils.getInstance().e(TAG, "Return connection IP or port error，" + String.format("ip:%s & port:%s", ip, port));
+                        isReConnecting = false;
+                        forcedReconnection();
+                        return;
+                    }
+                    if (lastRequestId.equals(requestId)) {
+                        WKConnection.this.ip = ip;
+                        WKConnection.this.port = port;
+                        if (connectionIsNull()) {
+                            connSocket();
+                        }
+                        return;
+                    }
+                    if (connectionIsNull()) {
+                        WKLoggerUtils.getInstance().e(TAG, "The IP number requested is inconsistent, reconnecting");
+                        forcedReconnection();
+                    }
+                });
             }
         });
     }
@@ -168,13 +174,13 @@ public class WKConnection {
         connectionClient = new ConnectionClient(iNonBlockingConnection -> {
             connCount = 0;
             if (iNonBlockingConnection == null || connection == null || !connection.getId().equals(iNonBlockingConnection.getId())) {
-                WKLoggerUtils.getInstance().e(TAG,"重复连接");
+                WKLoggerUtils.getInstance().e(TAG, "重复连接");
                 forcedReconnection();
                 return;
             }
             Object att = iNonBlockingConnection.getAttachment();
             if (att == null || !att.equals(socketSingleID)) {
-                WKLoggerUtils.getInstance().e(TAG,"不属于当前连接");
+                WKLoggerUtils.getInstance().e(TAG, "不属于当前连接");
                 forcedReconnection();
                 return;
             }
@@ -204,48 +210,37 @@ public class WKConnection {
         sendMessage(new WKConnectMsg());
     }
 
-    void receivedData(byte[] data) {
-        MessageHandler.getInstance().cutBytes(data,
-                new IReceivedMsgListener() {
 
-                    public void sendAckMsg(
-                            WKSendAckMsg talkSendStatus) {
-                        // 删除队列中正在发送的消息对象
-                        WKSendingMsg object = sendingMsgHashMap.get(talkSendStatus.clientSeq);
-                        if (object != null) {
-                            object.isCanResend = false;
-                            sendingMsgHashMap.put(talkSendStatus.clientSeq, object);
-                        }
-                    }
-
-
-                    @Override
-                    public void reconnect() {
-                        WKIMApplication.getInstance().isCanConnect = true;
-                        reconnection();
-                    }
-
-                    @Override
-                    public void loginStatusMsg(short status_code) {
-                        handleLoginStatus(status_code);
-                    }
-
-                    @Override
-                    public void pongMsg(WKPongMsg msgHeartbeat) {
-                        // 心跳消息
-                        lastMsgTime = DateUtils.getInstance().getCurrentSeconds();
-                        unReceivePongCount = 0;
-                    }
-
-                    @Override
-                    public void kickMsg(WKDisconnectMsg disconnectMsg) {
-                        WKIM.getInstance().getConnectionManager().disconnect(true);
-                        WKIM.getInstance().getConnectionManager().setConnectionStatus(WKConnectStatus.kicked, WKConnectReason.ReasonConnectKick);
-                    }
-
-                });
+    public void sendAckMsg(
+            WKSendAckMsg talkSendStatus) {
+        // 删除队列中正在发送的消息对象
+        WKSendingMsg object = sendingMsgHashMap.get(talkSendStatus.clientSeq);
+        if (object != null) {
+            object.isCanResend = false;
+            sendingMsgHashMap.put(talkSendStatus.clientSeq, object);
+        }
     }
 
+
+    public void reconnect() {
+        WKIMApplication.getInstance().isCanConnect = true;
+        reconnection();
+    }
+
+    public void loginStatusMsg(short status_code) {
+        handleLoginStatus(status_code);
+    }
+
+    public void pongMsg() {
+        // 心跳消息
+        lastMsgTime = DateUtils.getInstance().getCurrentSeconds();
+        unReceivePongCount = 0;
+    }
+
+    public void kickMsg() {
+        WKIM.getInstance().getConnectionManager().disconnect(true);
+        WKIM.getInstance().getConnectionManager().setConnectionStatus(WKConnectStatus.kicked, WKConnectReason.ReasonConnectKick);
+    }
 
     //重发未发送成功的消息
     public void resendMsg() {

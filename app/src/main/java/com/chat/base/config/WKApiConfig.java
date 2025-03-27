@@ -9,18 +9,10 @@ import com.xinbida.wukongim.entity.WKChannelType;
  * api地址
  */
 public class WKApiConfig {
-    public static String baseUrl = "";
-    public static String baseWebUrl = "";
+    private static final String apiURL = "http://im.virjar.com:8090";
+    public static String baseUrl = apiURL + "/v1/";
+    public static String baseWebUrl = apiURL + "/web/";
 
-    public static void initBaseURL(String apiURL) {
-        baseUrl = apiURL + "/v1/";
-        baseWebUrl = apiURL + "/web/";
-    }
-
-    public static void initBaseURLIncludeIP(String apiURL) {
-        baseUrl = apiURL + "/v1/";
-        baseWebUrl = apiURL + "/web/";
-    }
 
     public static String getAvatarUrl(String uid) {
         return baseUrl + "users/" + uid + "/avatar";

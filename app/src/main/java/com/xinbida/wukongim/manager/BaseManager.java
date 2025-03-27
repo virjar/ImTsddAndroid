@@ -9,23 +9,18 @@ import android.os.Looper;
  */
 public class BaseManager {
 
-    private boolean isMainThread() {
-        return Looper.getMainLooper().getThread() == Thread.currentThread();
-    }
+    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    private Handler mainHandler;
-
-    synchronized void runOnMainThread(ICheckThreadBack iCheckThreadBack) {
+    public static void runOnMainThread(ICheckThreadBack iCheckThreadBack) {
         if (iCheckThreadBack == null) {
             return;
         }
-        if (!isMainThread()) {
-            if (mainHandler == null) mainHandler = new Handler(Looper.getMainLooper());
+        if (!Looper.getMainLooper().isCurrentThread()) {
             mainHandler.post(iCheckThreadBack::onMainThread);
         } else iCheckThreadBack.onMainThread();
     }
 
-    protected interface ICheckThreadBack {
+    public interface ICheckThreadBack {
         void onMainThread();
     }
 }

@@ -104,7 +104,7 @@ class ConnectionClient implements IDataHandler, IConnectHandler,
                 }
                 byte[] buffBytes = iNonBlockingConnection.readBytesByLength(readLen);
                 if (buffBytes.length > 0) {
-                    WKConnection.getInstance().receivedData(buffBytes);
+                    MessageHandler.getInstance().cutBytes(buffBytes,  WKConnection.getInstance());
                 }
             }
 

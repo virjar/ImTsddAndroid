@@ -336,29 +336,6 @@ public class WKIMUtils {
             msg.remoteExtra.unreadCount = memberCount - 1;
         }
         if (msg.type == WKContentType.WK_TEXT) {
-//            WKTextContent textContent = (WKTextContent) msg.baseContentMsgModel;
-//            if (textContent != null && !TextUtils.isEmpty(textContent.getDisplayContent())) {
-//                List<String> urls = StringUtils.getStrUrls(textContent.getDisplayContent());
-//                if (urls.size() > 0) {
-//                    String url = urls.get(urls.size() - 1);
-//                    String contentJson = WKSharedPreferencesUtil.getInstance().getSP(url);
-//                    if (!TextUtils.isEmpty(contentJson)) {
-//                        try {
-//                            JSONObject jsonObject = new JSONObject(contentJson);
-//                            long expirationTime = jsonObject.optLong("expirationTime");
-//                            long tempTime = WKTimeUtils.getInstance().getCurrentSeconds() - expirationTime;
-//                            if (tempTime >= 60 * 60 * 24 * 360) {
-//                                WKJsoupUtils.getInstance().getURLContent(url, msg.clientMsgNO);
-//                            }
-//                        } catch (JSONException e) {
-//                            e.printStackTrace();
-//                        }
-//                    } else {
-//                        WKJsoupUtils.getInstance().getURLContent(url, msg.clientMsgNO);
-//                    }
-//                }
-//
-//            }
             resetMsgProhibitWord(msg);
         }
         WKUIChatMsgItemEntity uiChatMsgItemEntity = new WKUIChatMsgItemEntity(context, msg, new WKUIChatMsgItemEntity.ILinkClick() {
@@ -594,35 +571,20 @@ public class WKIMUtils {
         if (msgNotice == 0) {
             return;
         }
-//        Activity activity = ActManagerUtils.getInstance().getCurrentActivity();
-//        if (activity == null || activity.getComponentName().getClassName().equals(TabActivity.class.getName())) {
         if (playNewMsgMedia) {
             defaultMediaPlayer();
         }
         if (isVibrate) {
             vibrate();
         }
-//            return;
-//        }
+
         String showTitle = TextUtils.isEmpty(channel.channelRemark) ? channel.channelName : channel.channelRemark;
         String showContent = WKBaseApplication.getInstance().getContext().getString(R.string.default_new_msg);
         if (msgShowDetail == 1 && msg.baseContentMsgModel != null && !TextUtils.isEmpty(msg.baseContentMsgModel.getDisplayContent())) {
             showContent = msg.baseContentMsgModel.getDisplayContent();
         }
-//        String url;
-//        if (!TextUtils.isEmpty(channel.avatar) && channel.avatar.contains("/")) {
-//            url = WKApiConfig.getShowUrl(channel.avatar);
-//        } else {
-//            url = WKApiConfig.getShowAvatar(channel.channelID, channel.channelType);
-//        }
-//        String finalShowContent = showContent;
-//        if (isVibrate) {
-//            PushNotificationHelper.INSTANCE.notifyMention(WKUIKitApplication.getInstance().getContext(), 1, showTitle, showContent);
-//        } else {
+
         PushNotificationHelper.INSTANCE.notifyMessage(WKUIKitApplication.getInstance().getContext(), 1, showTitle, showContent);
-//        }
-//        showNotice(showTitle, finalShowContent, null, isVibrate);
-//        getChannelLogo(url, activity, logo -> showNotice(showTitle, finalShowContent, logo, isVibrate));
     }
 
 

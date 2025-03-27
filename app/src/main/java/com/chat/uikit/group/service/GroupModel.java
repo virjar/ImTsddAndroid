@@ -17,11 +17,14 @@ import com.chat.uikit.group.GroupEntity;
 import com.chat.uikit.group.service.entity.GroupMember;
 import com.chat.uikit.group.service.entity.GroupQr;
 import com.xinbida.wukongim.WKIM;
+import com.xinbida.wukongim.db.ChannelMembersDbManager;
 import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelMember;
 import com.xinbida.wukongim.entity.WKChannelMemberExtras;
 import com.xinbida.wukongim.entity.WKChannelType;
-import com.xinbida.wukongim.interfaces.IChannelMemberListResult;
+import com.xinbida.wukongim.interfaces.IGetChannelMemberListResult;
+import com.xinbida.wukongim.manager.ChannelMembersManager;
+import com.xinbida.wukongim.utils.WKCommonUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -151,12 +154,20 @@ public class GroupModel extends WKBaseModel {
     }
 
 
-    public void getChannelMembers(String groupNO, String keyword, int page, int limit, IChannelMemberListResult iChannelMemberListResult) {
-        request(createService(GroupService.class).groupMembers(groupNO, keyword, page, limit), new IRequestResultListener<>() {
+    public void getChannelMembers(
+            byte channelType,
+            IGetChannelMemberListResult iGetChannelMemberListResult
+            , String channelID, String keyword, int page, int limit) {
+
+        request(createService(GroupService.class).groupMembers(channelID, keyword, page, limit), new IRequestResultListener<>() {
             @Override
             public void onSuccess(List<GroupMember> result) {
                 List<WKChannelMember> list = serialize(result);
-                iChannelMemberListResult.onResult(list);
+                iGetChannelMemberListResult.onResult(list, true);
+                if (WKCommonUtils.isNotEmpty(list)) {
+                    ChannelMembersDbManager.getInstance().deleteWithChannel(channelID, channelType);
+                    ChannelMembersManager.getInstance().save(list);
+                }
             }
 
             @Override

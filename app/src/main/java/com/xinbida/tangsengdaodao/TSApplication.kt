@@ -10,15 +10,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.text.TextUtils
+import androidx.core.net.toUri
 import androidx.multidex.MultiDexApplication
 import com.chat.base.WKBaseApplication
-import com.chat.base.config.WKApiConfig
 import com.chat.base.config.WKConfig
 import com.chat.base.config.WKConstants
 import com.chat.base.config.WKSharedPreferencesUtil
@@ -35,7 +34,6 @@ import com.chat.uikit.TabActivity
 import com.chat.uikit.WKUIKitApplication
 import com.chat.uikit.chat.manager.WKIMUtils
 import com.chat.uikit.user.service.UserModel
-import com.xinbida.tangsengdaodao.R
 import kotlin.system.exitProcess
 
 class TSApplication : MultiDexApplication() {
@@ -96,7 +94,7 @@ class TSApplication : MultiDexApplication() {
         WKMultiLanguageUtil.getInstance().init(this)
         WKBaseApplication.getInstance().init(getAppPackageName(), this)
         Theme.applyTheme()
-        initApi()
+
         WKLoginApplication.getInstance().init(this)
         WKScanApplication.getInstance().init(this)
         WKUIKitApplication.getInstance().init(this)
@@ -105,16 +103,6 @@ class TSApplication : MultiDexApplication() {
         addListener()
     }
 
-    private fun initApi() {
-        //var apiURL = WKSharedPreferencesUtil.getInstance().getSP("api_base_url")
-        var  apiURL = "http://im.virjar.com:8090";
-        if (TextUtils.isEmpty(apiURL)) {
-            apiURL = "https://api.botgate.cn"
-            WKApiConfig.initBaseURL(apiURL)
-        } else {
-            WKApiConfig.initBaseURLIncludeIP(apiURL)
-        }
-    }
 
     private fun getAppPackageName(): String {
         return "com.xinbida.tangsengdaodao"
@@ -196,47 +184,43 @@ class TSApplication : MultiDexApplication() {
     private fun createNotificationChannel() {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name: CharSequence = applicationContext.getString(R.string.new_msg_notification)
-            val description = applicationContext.getString(R.string.new_msg_notification_desc)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(WKConstants.newMsgChannelID, name, importance)
-            channel.description = description
-            channel.enableVibration(true) //是否有震动
-            channel.setSound(
-                Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + applicationContext.packageName + "/" + R.raw.newmsg),
-                Notification.AUDIO_ATTRIBUTES_DEFAULT
-            )
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            val notificationManager = applicationContext.getSystemService(
-                NotificationManager::class.java
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
+        val name: CharSequence = applicationContext.getString(R.string.new_msg_notification)
+        val description = applicationContext.getString(R.string.new_msg_notification_desc)
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(WKConstants.newMsgChannelID, name, importance)
+        channel.description = description
+        channel.enableVibration(true) //是否有震动
+        channel.setSound(
+            (ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + applicationContext.packageName + "/" + R.raw.newmsg).toUri(),
+            Notification.AUDIO_ATTRIBUTES_DEFAULT
+        )
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
+        val notificationManager = applicationContext.getSystemService(
+            NotificationManager::class.java
+        )
+        notificationManager.createNotificationChannel(channel)
         createNotificationRTCChannel()
     }
 
     private fun createNotificationRTCChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name: CharSequence = applicationContext.getString(R.string.new_rtc_notification)
-            val description = applicationContext.getString(R.string.new_rtc_notification_desc)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(WKConstants.newRTCChannelID, name, importance)
-            channel.description = description
-            channel.enableVibration(true)
-            channel.vibrationPattern = longArrayOf(0, 100, 100, 100, 100, 100)
-            channel.setSound(
-                Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + applicationContext.packageName + "/" + R.raw.newrtc),
-                Notification.AUDIO_ATTRIBUTES_DEFAULT
-            )
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            val notificationManager = applicationContext.getSystemService(
-                NotificationManager::class.java
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
+        val name: CharSequence = applicationContext.getString(R.string.new_rtc_notification)
+        val description = applicationContext.getString(R.string.new_rtc_notification_desc)
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(WKConstants.newRTCChannelID, name, importance)
+        channel.description = description
+        channel.enableVibration(true)
+        channel.vibrationPattern = longArrayOf(0, 100, 100, 100, 100, 100)
+        channel.setSound(
+            Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + applicationContext.packageName + "/" + R.raw.newrtc),
+            Notification.AUDIO_ATTRIBUTES_DEFAULT
+        )
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
+        val notificationManager = applicationContext.getSystemService(
+            NotificationManager::class.java
+        )
+        notificationManager.createNotificationChannel(channel)
     }
 
 }

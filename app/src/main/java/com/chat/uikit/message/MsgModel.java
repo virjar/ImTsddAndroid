@@ -281,10 +281,6 @@ public class MsgModel extends WKBaseModel {
     }
 
 
-    public interface IChatIp {
-        void onResult(int code, String ip, String port);
-    }
-
     public void typing(String channelID, byte channelType) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("channel_id", channelID);
