@@ -51,7 +51,6 @@ import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.entity.WKCMDKeys;
 import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelExtras;
-import com.xinbida.wukongim.entity.WKChannelMember;
 import com.xinbida.wukongim.entity.WKChannelType;
 import com.xinbida.wukongim.entity.WKConversationMsg;
 import com.xinbida.wukongim.entity.WKMsg;
@@ -287,21 +286,6 @@ public class WKIMUtils {
             return null;
         });
         WKIM.getInstance().getChannelMembersManager().addOnGetChannelMembersListener((channelID, b, keyword, page, limit, iChannelMemberListResult) -> GroupModel.getInstance().getChannelMembers(channelID, keyword, page, limit, iChannelMemberListResult));
-        /*
-         * 获取频道成员
-         */
-        WKIM.getInstance().getChannelMembersManager().addOnGetChannelMemberListener((channelId, channelType, uid, iChannelMemberInfoListener) -> {
-            WKCommonModel.getInstance().getChannel(uid, WKChannelType.PERSONAL, (code, msg, entity) -> {
-                WKChannelMember channelMember = new WKChannelMember();
-                channelMember.memberName = entity.name;
-                channelMember.memberUID = entity.channel.channel_id;
-                channelMember.channelID = channelId;
-                channelMember.channelType = channelType;
-                WKIM.getInstance().getChannelMembersManager().refreshChannelMemberCache(channelMember);
-                iChannelMemberInfoListener.onResult(channelMember);
-            });
-            return null;
-        });
 
         //监听频道修改头像
         WKIM.getInstance().getChannelManager().addOnRefreshChannelAvatar((s, b) -> {

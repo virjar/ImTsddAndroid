@@ -47,6 +47,7 @@ import com.xinbida.wukongim.entity.WKSyncExtraMsg;
 import com.xinbida.wukongim.entity.WKSyncMsg;
 import com.xinbida.wukongim.interfaces.ISyncChannelMsgBack;
 import com.xinbida.wukongim.interfaces.ISyncConversationChatBack;
+import com.xinbida.wukongim.manager.ConnectionManager;
 import com.xinbida.wukongim.message.type.WKMsgContentType;
 import com.xinbida.wukongim.message.type.WKSendMsgResult;
 
@@ -65,7 +66,8 @@ public class MsgModel extends WKBaseModel {
     private MsgModel() {
 
     }
-   public List<WKChannelState> channelStatus;
+
+    public List<WKChannelState> channelStatus;
     private int last_message_seq;
 
     private static class MsgModelBinder {
@@ -261,22 +263,23 @@ public class MsgModel extends WKBaseModel {
         });
     }
 
-    public void getChatIp(IChatIp iChatIp) {
+    public void getChatIp(String requestId, ConnectionManager.IRequestIP iRequestIP) {
         request(createService(MsgService.class).getImIp(WKConfig.getInstance().getUid()), new IRequestResultListener<>() {
             @Override
             public void onSuccess(Ipentity result) {
                 if (result != null && !TextUtils.isEmpty(result.tcp_addr)) {
                     String[] strings = result.tcp_addr.split(":");
-                    iChatIp.onResult(HttpResponseCode.success, strings[0], strings[1]);
+                    iRequestIP.onResult(requestId, strings[0], Integer.parseInt(strings[1]));
                 }
             }
 
             @Override
             public void onFail(int code, String msg) {
-                iChatIp.onResult(code, "", "0");
+                iRequestIP.onResult(requestId, "", 0);
             }
         });
     }
+
 
     public interface IChatIp {
         void onResult(int code, String ip, String port);
@@ -355,7 +358,7 @@ public class MsgModel extends WKBaseModel {
                     syncCmdMsgs(0);
                     ackDeviceUUID();
                     syncReminder();
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> EndpointManager.getInstance().invoke("refresh_conversation_calling",null),300);
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> EndpointManager.getInstance().invoke("refresh_conversation_calling", null), 300);
                 } else {
                     iSyncConversationChatBack.onBack(null);
                 }

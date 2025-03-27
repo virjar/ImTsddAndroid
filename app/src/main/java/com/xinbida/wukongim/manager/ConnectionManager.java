@@ -90,20 +90,10 @@ public class ConnectionManager extends BaseManager {
         runOnMainThread(new ICheckThreadBack() {
             @Override
             public void onMainThread() {
-                MsgModel.getInstance()
-                        .getChatIp(new MsgModel.IChatIp() {
-                                       @Override
-                                       public void onResult(int code, String ip, String port) {
-                                           iRequestIP.onResult(requestId, ip, Integer.parseInt(port));
-                                       }
-                                   }
-                        );
-
-
+                MsgModel.getInstance().getChatIp(requestId, iRequestIP);
             }
         });
     }
-
 
 
     public void setConnectionStatus(int status, String reason) {

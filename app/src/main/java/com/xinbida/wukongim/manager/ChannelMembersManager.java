@@ -11,8 +11,6 @@ import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelExtras;
 import com.xinbida.wukongim.entity.WKChannelMember;
 import com.xinbida.wukongim.interfaces.IAddChannelMemberListener;
-import com.xinbida.wukongim.interfaces.IChannelMemberInfoListener;
-import com.xinbida.wukongim.interfaces.IGetChannelMemberInfo;
 import com.xinbida.wukongim.interfaces.IGetChannelMemberList;
 import com.xinbida.wukongim.interfaces.IGetChannelMemberListResult;
 import com.xinbida.wukongim.interfaces.IRefreshChannelMember;
@@ -46,7 +44,6 @@ public class ChannelMembersManager extends BaseManager {
     private ConcurrentHashMap<String, IAddChannelMemberListener> addChannelMemberMap;
     private ISyncChannelMembers syncChannelMembers;
     //获取频道成员监听
-    private IGetChannelMemberInfo iGetChannelMemberInfoListener;
     private IGetChannelMemberList iGetChannelMemberList;
 
 
@@ -261,17 +258,6 @@ public class ChannelMembersManager extends BaseManager {
         }
     }
 
-    public void addOnGetChannelMemberListener(IGetChannelMemberInfo iGetChannelMemberInfoListener) {
-        this.iGetChannelMemberInfoListener = iGetChannelMemberInfoListener;
-    }
-
-    public void refreshChannelMemberCache(WKChannelMember channelMember) {
-        if (channelMember == null) return;
-        List<WKChannelMember> list = new ArrayList<>();
-        list.add(channelMember);
-        ChannelMembersDbManager.getInstance().insertMembers(list);
-    }
-
     /**
      * 添加加入频道成员监听
      *
@@ -299,18 +285,6 @@ public class ChannelMembersManager extends BaseManager {
         }
     }
 
-    /**
-     * 获取频道成员信息
-     *
-     * @param channelId                  频道ID
-     * @param uid                        成员ID
-     * @param iChannelMemberInfoListener 回调
-     */
-    public WKChannelMember getMember(String channelId, byte channelType, String uid, IChannelMemberInfoListener iChannelMemberInfoListener) {
-        if (iGetChannelMemberInfoListener != null && !TextUtils.isEmpty(channelId) && !TextUtils.isEmpty(uid) && iChannelMemberInfoListener != null) {
-            return iGetChannelMemberInfoListener.onResult(channelId, channelType, uid, iChannelMemberInfoListener);
-        } else return null;
-    }
 
     public WKChannelMember getMember(String channelID, byte channelType, String uid) {
         return ChannelMembersDbManager.getInstance().query(channelID, channelType, uid);
@@ -328,9 +302,6 @@ public class ChannelMembersManager extends BaseManager {
         return ChannelMembersDbManager.getInstance().queryWithPage(channelId, channelType, page, size);
     }
 
-    public List<WKChannelMember> getDeletedMembers(String channelID, byte channelType) {
-        return ChannelMembersDbManager.getInstance().queryDeleted(channelID, channelType);
-    }
 
     //成员数量
     public int getMemberCount(String channelID, byte channelType) {

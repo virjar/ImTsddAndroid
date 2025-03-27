@@ -21,7 +21,6 @@ import com.chat.base.common.WKCommonModel;
 import com.chat.base.config.WKConfig;
 import com.chat.base.config.WKSharedPreferencesUtil;
 import com.chat.base.endpoint.EndpointCategory;
-import com.chat.base.endpoint.EndpointHandler;
 import com.chat.base.endpoint.EndpointManager;
 import com.chat.base.endpoint.entity.ChatViewMenu;
 import com.chat.base.entity.PopupMenuItem;
@@ -34,18 +33,17 @@ import com.chat.base.utils.WKReader;
 import com.chat.base.utils.WKTimeUtils;
 import com.chat.base.utils.WKToastUtils;
 import com.chat.base.utils.singleclick.SingleClickUtil;
-import com.xinbida.tangsengdaodao.R;
 import com.chat.uikit.TabActivity;
 import com.chat.uikit.WKUIKitApplication;
 import com.chat.uikit.chat.adapter.ChatConversationAdapter;
 import com.chat.uikit.chat.manager.WKIMUtils;
 import com.chat.uikit.contacts.service.FriendModel;
-import com.xinbida.tangsengdaodao.databinding.FragChatConversationLayoutBinding;
 import com.chat.uikit.enity.ChatConversationMsg;
 import com.chat.uikit.group.service.GroupModel;
 import com.chat.uikit.message.MsgModel;
-import com.chat.uikit.search.SearchAllActivity;
 import com.chat.uikit.search.remote.GlobalActivity;
+import com.xinbida.tangsengdaodao.R;
+import com.xinbida.tangsengdaodao.databinding.FragChatConversationLayoutBinding;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.entity.WKCMDKeys;
 import com.xinbida.wukongim.entity.WKChannel;
@@ -53,7 +51,6 @@ import com.xinbida.wukongim.entity.WKChannelState;
 import com.xinbida.wukongim.entity.WKChannelType;
 import com.xinbida.wukongim.entity.WKReminder;
 import com.xinbida.wukongim.entity.WKUIConversationMsg;
-import com.xinbida.wukongim.interfaces.IAllConversations;
 import com.xinbida.wukongim.message.type.WKConnectReason;
 import com.xinbida.wukongim.message.type.WKConnectStatus;
 
@@ -552,27 +549,7 @@ public class ChatFragment extends WKBaseFragment<FragChatConversationLayoutBindi
 
 
     private void getChatMsg() {
-        WKIM.getInstance().getConversationManager().getAll(new IAllConversations() {
-            @Override
-            public void onResult(List<WKUIConversationMsg> list) {
-                List<ChatConversationMsg> tempList = new ArrayList<>();
-                if (WKReader.isNotEmpty(list)) {
-                    for (int i = 0, size = list.size(); i < size; i++) {
-                        tempList.add(new ChatConversationMsg(list.get(i)));
-                    }
-                }
-                AndroidUtilities.runOnUIThread(() -> sortMsg(tempList));
-            }
-        });
-
-//        List<ChatConversationMsg> list = new ArrayList<>();
-//        List<WKUIConversationMsg> tempList = WKIM.getInstance().getConversationManager().getAll();
-//        if (WKReader.isNotEmpty(tempList)) {
-//            for (int i = 0, size = tempList.size(); i < size; i++) {
-//                list.add(new ChatConversationMsg(tempList.get(i)));
-//            }
-//        }
-//        return list;
+        WKIM.getInstance().getConversationManager().getAll(ChatFragment.this);
     }
 
     private void setAllCount() {
@@ -730,7 +707,7 @@ public class ChatFragment extends WKBaseFragment<FragChatConversationLayoutBindi
     }
 
     //排序消息
-    private void sortMsg(List<ChatConversationMsg> list) {
+    public void sortMsg(List<ChatConversationMsg> list) {
         groupMsg(list);
         Collections.sort(list, (conversationMsg, t1) -> (int) (t1.uiConversationMsg.lastMsgTimestamp - conversationMsg.uiConversationMsg.lastMsgTimestamp));
         List<ChatConversationMsg> topList = new ArrayList<>();

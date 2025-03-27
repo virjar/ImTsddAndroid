@@ -2,8 +2,11 @@ package com.xinbida.wukongim.manager;
 
 import android.content.ContentValues;
 import android.text.TextUtils;
-import android.util.Log;
 
+import com.chat.base.utils.AndroidUtilities;
+import com.chat.base.utils.WKReader;
+import com.chat.uikit.enity.ChatConversationMsg;
+import com.chat.uikit.fragment.ChatFragment;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.WKIMApplication;
 import com.xinbida.wukongim.db.ConversationDbManager;
@@ -18,7 +21,6 @@ import com.xinbida.wukongim.entity.WKSyncChat;
 import com.xinbida.wukongim.entity.WKSyncConvMsgExtra;
 import com.xinbida.wukongim.entity.WKSyncRecent;
 import com.xinbida.wukongim.entity.WKUIConversationMsg;
-import com.xinbida.wukongim.interfaces.IAllConversations;
 import com.xinbida.wukongim.interfaces.IDeleteConversationMsg;
 import com.xinbida.wukongim.interfaces.IRefreshConversationMsg;
 import com.xinbida.wukongim.interfaces.IRefreshConversationMsgList;
@@ -77,13 +79,16 @@ public class ConversationManager extends BaseManager {
         return ConversationDbManager.getInstance().queryAll();
     }
 
-    public void getAll(IAllConversations iAllConversations) {
-        if (iAllConversations == null) {
-            return;
-        }
+    public void getAll(ChatFragment chatFragment) {
         dispatchQueuePool.execute(() -> {
             List<WKUIConversationMsg> list = ConversationDbManager.getInstance().queryAll();
-            iAllConversations.onResult(list);
+            List<ChatConversationMsg> tempList = new ArrayList<>();
+            if (WKReader.isNotEmpty(list)) {
+                for (int i = 0, size = list.size(); i < size; i++) {
+                    tempList.add(new ChatConversationMsg(list.get(i)));
+                }
+            }
+            AndroidUtilities.runOnUIThread(() -> chatFragment.sortMsg(tempList));
         });
     }
 
