@@ -17,7 +17,6 @@ import com.xinbida.wukongim.entity.WKMsg;
 import com.xinbida.wukongim.entity.WKMsgSetting;
 import com.xinbida.wukongim.entity.WKSyncMsgMode;
 import com.xinbida.wukongim.entity.WKUIConversationMsg;
-import com.xinbida.wukongim.manager.BaseManager;
 import com.xinbida.wukongim.message.type.WKConnectReason;
 import com.xinbida.wukongim.message.type.WKConnectStatus;
 import com.xinbida.wukongim.message.type.WKMsgType;
@@ -163,38 +162,32 @@ public class WKConnClient {
 
     private synchronized void connSocket() {
         closeConnect();
-        socketSingleID = UUID.randomUUID().toString().replace("-", "");
-        connectionHandle = new ConnectionHandle(iNonBlockingConnection -> {
-            connCount = 0;
-            if (iNonBlockingConnection == null || connection == null || !connection.getId().equals(iNonBlockingConnection.getId())) {
-                WKLoggerUtils.getInstance().e(TAG, "重复连接");
-                scheduleReconnect();
-                return;
-            }
-            Object att = iNonBlockingConnection.getAttachment();
-            if (att == null || !att.equals(socketSingleID)) {
-                WKLoggerUtils.getInstance().e(TAG, "不属于当前连接");
-                scheduleReconnect();
-                return;
-            }
-            connection.setIdleTimeoutMillis(1000 * 3);
-            connection.setConnectionTimeoutMillis(1000 * 3);
-            connection.setFlushmode(IConnection.FlushMode.ASYNC);
-            isReConnecting = false;
-            if (connection != null)
-                connection.setAutoflush(true);
-            WKConnClient.getInstance().sendConnectMsg();
-        });
+
+
         dispatchQueuePool.execute(() -> {
             try {
-                connection = new NonBlockingConnection(ip, port, connectionHandle);
+                // 看了下代码，内部代码其实是同步的，所以这里不用这么复杂，直接放到线程里面写就行
+                ConnectionHandle handle = new ConnectionHandle();
+                String socketSingleID = UUID.randomUUID().toString().replace("-", "");
+                NonBlockingConnection connection = new NonBlockingConnection(ip, port, handle);
+                connection.setIdleTimeoutMillis(1000 * 3);
                 connection.setAttachment(socketSingleID);
+                connection.setFlushmode(IConnection.FlushMode.ASYNC);
+                connection.setAutoflush(true);
+                new Handler(Looper.getMainLooper()).post(() -> onConnectSuccess(connection));
             } catch (IOException e) {
                 isReConnecting = false;
                 WKLoggerUtils.getInstance().e(TAG, "connection exception:" + e.getMessage());
                 scheduleReconnect();
             }
         });
+    }
+
+    private void onConnectSuccess(NonBlockingConnection connection) {
+        closeConnect();
+        this.connection = connection;
+        this.socketSingleID = (String) connection.getAttachment();
+        WKConnClient.getInstance().sendConnectMsg();
     }
 
     //发送连接消息

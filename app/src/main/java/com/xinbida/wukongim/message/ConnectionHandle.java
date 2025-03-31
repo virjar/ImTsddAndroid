@@ -5,12 +5,8 @@ import android.text.TextUtils;
 import com.xinbida.wukongim.WKIMApplication;
 import com.xinbida.wukongim.utils.WKLoggerUtils;
 
-import org.xsocket.connection.IConnectExceptionHandler;
-import org.xsocket.connection.IConnectHandler;
-import org.xsocket.connection.IConnectionTimeoutHandler;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.IDisconnectHandler;
-import org.xsocket.connection.IIdleTimeoutHandler;
 import org.xsocket.connection.INonBlockingConnection;
 
 import java.io.IOException;
@@ -20,45 +16,9 @@ import java.nio.BufferUnderflowException;
  * 2020-12-18 10:28
  * 连接客户端
  */
-class ConnectionHandle implements IDataHandler, IConnectHandler,
-        IDisconnectHandler, IConnectExceptionHandler,
-        IConnectionTimeoutHandler, IIdleTimeoutHandler {
+class ConnectionHandle implements IDataHandler, IDisconnectHandler {
     private final String TAG = "ConnectionClient";
-    private boolean isConnectSuccess;
 
-    interface IConnResult {
-        void onResult(INonBlockingConnection iNonBlockingConnection);
-    }
-    IConnResult iConnResult;
-    ConnectionHandle(IConnResult iConnResult) {
-        this.iConnResult = iConnResult;
-        isConnectSuccess = false;
-    }
-
-    @Override
-    public boolean onConnectException(INonBlockingConnection iNonBlockingConnection, IOException e) {
-        WKLoggerUtils.getInstance().e(TAG, "connection exception");
-        WKConnClient.getInstance().scheduleReconnect();
-        close(iNonBlockingConnection);
-        return true;
-    }
-
-    @Override
-    public boolean onConnect(INonBlockingConnection iNonBlockingConnection) throws BufferUnderflowException {
-        isConnectSuccess = true;
-        iConnResult.onResult( iNonBlockingConnection);
-        return false;
-
-    }
-
-    @Override
-    public boolean onConnectionTimeout(INonBlockingConnection iNonBlockingConnection) {
-        if (!isConnectSuccess) {
-            WKLoggerUtils.getInstance().e(TAG, "connection timeout");
-            WKConnClient.getInstance().scheduleReconnect();
-        }
-        return true;
-    }
 
     @Override
     public boolean onData(INonBlockingConnection iNonBlockingConnection) throws BufferUnderflowException {
@@ -104,7 +64,7 @@ class ConnectionHandle implements IDataHandler, IConnectHandler,
                 }
                 byte[] buffBytes = iNonBlockingConnection.readBytesByLength(readLen);
                 if (buffBytes.length > 0) {
-                    MessageHandler.getInstance().cutBytes(buffBytes,  WKConnClient.getInstance());
+                    MessageHandler.getInstance().cutBytes(buffBytes, WKConnClient.getInstance());
                 }
             }
 
@@ -145,15 +105,6 @@ class ConnectionHandle implements IDataHandler, IConnectHandler,
         return true;
     }
 
-    @Override
-    public boolean onIdleTimeout(INonBlockingConnection iNonBlockingConnection) {
-        if (!isConnectSuccess) {
-            WKLoggerUtils.getInstance().e(TAG, "Idle timeout");
-            WKConnClient.getInstance().scheduleReconnect();
-            close(iNonBlockingConnection);
-        }
-        return true;
-    }
 
     private void close(INonBlockingConnection iNonBlockingConnection) {
         try {
