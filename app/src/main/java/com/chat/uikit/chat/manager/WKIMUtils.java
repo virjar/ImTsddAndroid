@@ -116,29 +116,6 @@ public class WKIMUtils {
         });
 
 
-        //消息存库拦截器监听
-        WKIM.getInstance().getMsgManager().addMessageStoreBeforeIntercept(msg -> {
-            if (msg != null && msg.type == WKContentType.screenshot) {
-                WKChannel channel = WKIM.getInstance().getChannelManager().getChannel(msg.channelID, msg.channelType);
-                if (channel != null && channel.remoteExtraMap != null && channel.remoteExtraMap.containsKey(WKChannelExtras.screenshot)) {
-                    Object object = channel.remoteExtraMap.get(WKChannelExtras.screenshot);
-                    int screenshot = 0;
-                    if (object != null) {
-                        screenshot = (int) object;
-                    }
-                    return screenshot != 0;
-                } else {
-                    return true;
-                }
-            }
-            return true;
-        });
-        //监听聊天附件上传
-        WKIM.getInstance().getMsgManager().addOnUploadAttachListener((msg, listener) -> WKSendMsgUtils.getInstance().uploadChatAttachment(msg, listener));
-        //监听同步会话
-        WKIM.getInstance().getConversationManager().addOnSyncConversationListener((s, i, l, iSyncConvChatBack) -> MsgModel.getInstance().syncChat(s, i, l, iSyncConvChatBack));
-        //监听同步频道会话
-        WKIM.getInstance().getMsgManager().addOnSyncChannelMsgListener((channelID, channelType, startMessageSeq, endMessageSeq, limit, pullMode, iSyncChannelMsgBack) -> MsgModel.getInstance().syncChannelMsg(channelID, channelType, startMessageSeq, endMessageSeq, limit, pullMode, iSyncChannelMsgBack));
         //新消息监听
         WKIM.getInstance().getMsgManager().addOnNewMsgListener("system", msgList -> {
             boolean isAlertMsg = false;
@@ -239,37 +216,6 @@ public class WKIMUtils {
             if (sensitiveWordsMsg != null) {
                 WKMsg finalSensitiveWordsMsg = sensitiveWordsMsg;
                 new Handler(Objects.requireNonNull(Looper.myLooper())).postDelayed(() -> WKIM.getInstance().getMsgManager().saveAndUpdateConversationMsg(finalSensitiveWordsMsg, false), 1000 * 2);
-            }
-        });
-        WKIM.getInstance().getMsgManager().addOnUploadMsgExtraListener(msgExtra -> {
-            WKMsg msg = WKIM.getInstance().getMsgManager().getWithMessageID(msgExtra.messageID);
-            int msgSeq = 0;
-            if (msg != null) {
-                msgSeq = msg.messageSeq;
-            }
-            MsgModel.getInstance().editMsg(msgExtra.messageID, msgSeq, msgExtra.channelID, msgExtra.channelType, msgExtra.contentEdit, null);
-        });
-
-        /*
-         * 设置获取频道信息的监听
-         */
-        WKIM.getInstance().getChannelManager().addOnGetChannelInfoListener((channelId, channelType, iChannelInfoListener) -> {
-            WKCommonModel.getInstance().getChannel(channelId, channelType, null);
-            return null;
-        });
-
-
-        //监听频道修改头像
-        WKIM.getInstance().getChannelManager().addOnRefreshChannelAvatar((s, b) -> {
-            // 头像需要本地修改
-            String key = UUID.randomUUID().toString().replace("-", "");
-            AvatarView.clearCache(s, b);
-            WKIM.getInstance().getChannelManager().updateAvatarCacheKey(s, b, key);
-        });
-        //刷新群成员
-        WKIM.getInstance().getChannelMembersManager().addOnSyncChannelMembers((channelID, channelType) -> {
-            if (!TextUtils.isEmpty(channelID) && channelType == WKChannelType.GROUP) {
-                GroupModel.getInstance().groupMembersSync(channelID, null);
             }
         });
 

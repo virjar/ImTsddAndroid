@@ -75,7 +75,7 @@ public class WKSendMsgUtils {
      * @param msg      消息
      * @param listener 上传返回
      */
-    void uploadChatAttachment(WKMsg msg, IUploadAttacResultListener listener) {
+    public void uploadChatAttachment(WKMsg msg, IUploadAttacResultListener listener) {
         //存在附件待上传
         if (msg.type == WKContentType.WK_IMAGE || msg.type == WKContentType.WK_GIF || msg.type == WKContentType.WK_VOICE || msg.type == WKContentType.WK_LOCATION || msg.type == WKContentType.WK_FILE) {
             WKMediaMessageContent contentMsgModel = (WKMediaMessageContent) msg.baseContentMsgModel;

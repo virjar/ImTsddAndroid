@@ -587,7 +587,7 @@ public class MsgDbManager {
         List<WKMsg> existMsgList = new ArrayList<>();
 //        List<WKMsg> msgIdExistMsgList = new ArrayList<>();
         for (int i = 0, size = saveList.size(); i < size; i++) {
-            boolean isSave = WKIM.getInstance().getMsgManager().setMessageStoreBeforeIntercept(saveList.get(i));
+            boolean isSave = MsgManager.needSaveMsg(saveList.get(i));
             if (!isSave) {
                 saveList.get(i).isDeleted = 1;
             }
@@ -700,7 +700,7 @@ public class MsgDbManager {
     }
 
     public synchronized long insert(WKMsg msg) {
-        boolean isSave = WKIM.getInstance().getMsgManager().setMessageStoreBeforeIntercept(msg);
+        boolean isSave =MsgManager.needSaveMsg(msg);
         if (!isSave) {
             msg.isDeleted = 1;
         }

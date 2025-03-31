@@ -2,25 +2,25 @@ package com.xinbida.wukongim.manager;
 
 import android.text.TextUtils;
 
+import com.chat.base.common.WKCommonModel;
+import com.chat.base.ui.components.AvatarView;
+import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.db.ChannelDBManager;
 import com.xinbida.wukongim.db.WKDBColumns;
 import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelSearchResult;
 import com.xinbida.wukongim.interfaces.IChannelInfoListener;
-import com.xinbida.wukongim.interfaces.IGetChannelInfo;
 import com.xinbida.wukongim.interfaces.IRefreshChannel;
-import com.xinbida.wukongim.interfaces.IRefreshChannelAvatar;
 import com.xinbida.wukongim.utils.WKCommonUtils;
 import com.xinbida.wukongim.utils.WKLoggerUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -42,8 +42,6 @@ public class ChannelManager extends BaseManager {
         return ChannelManagerBinder.channelManager;
     }
 
-    private IRefreshChannelAvatar iRefreshChannelAvatar;
-    private IGetChannelInfo iGetChannelInfo;
     private final CopyOnWriteArrayList<WKChannel> wkChannelList = new CopyOnWriteArrayList<>();
     //监听刷新频道
     private ConcurrentHashMap<String, IRefreshChannel> refreshChannelMap;
@@ -79,14 +77,12 @@ public class ChannelManager extends BaseManager {
     }
 
     public WKChannel getChannel(String channelId, byte channelType, IChannelInfoListener iChannelInfoListener) {
-        if (this.iGetChannelInfo != null && !TextUtils.isEmpty(channelId) && iChannelInfoListener != null) {
-            return iGetChannelInfo.onGetChannelInfo(channelId, channelType, iChannelInfoListener);
+        if (!TextUtils.isEmpty(channelId) && iChannelInfoListener != null) {
+            WKCommonModel.getInstance().getChannel(channelId, channelType, null);
+            return null;
         } else return null;
     }
 
-    public void addOnGetChannelInfoListener(IGetChannelInfo iGetChannelInfoListener) {
-        this.iGetChannelInfo = iGetChannelInfoListener;
-    }
 
     public void saveOrUpdateChannel(WKChannel channel) {
         if (channel == null) return;
@@ -423,14 +419,14 @@ public class ChannelManager extends BaseManager {
         ChannelDBManager.getInstance().updateWithField(channelID, channelType, WKDBColumns.WKChannelColumns.avatar_cache_key, avatar);
     }
 
-    public void addOnRefreshChannelAvatar(IRefreshChannelAvatar iRefreshChannelAvatar) {
-        this.iRefreshChannelAvatar = iRefreshChannelAvatar;
-    }
 
     public void setOnRefreshChannelAvatar(String channelID, byte channelType) {
-        if (iRefreshChannelAvatar != null) {
-            runOnMainThread(() -> iRefreshChannelAvatar.onRefreshChannelAvatar(channelID, channelType));
-        }
+        runOnMainThread(() -> {       // 头像需要本地修改
+                    String key = UUID.randomUUID().toString().replace("-", "");
+                    AvatarView.clearCache(channelID, channelType);
+                    WKIM.getInstance().getChannelManager().updateAvatarCacheKey(channelID, channelType, key);
+                }
+        );
     }
 
     public synchronized void clearARMCache() {

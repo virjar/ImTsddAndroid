@@ -7,6 +7,7 @@ import com.chat.base.utils.AndroidUtilities;
 import com.chat.base.utils.WKReader;
 import com.chat.uikit.enity.ChatConversationMsg;
 import com.chat.uikit.fragment.ChatFragment;
+import com.chat.uikit.message.MsgModel;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.WKIMApplication;
 import com.xinbida.wukongim.db.ConversationDbManager;
@@ -24,7 +25,6 @@ import com.xinbida.wukongim.entity.WKUIConversationMsg;
 import com.xinbida.wukongim.interfaces.IDeleteConversationMsg;
 import com.xinbida.wukongim.interfaces.IRefreshConversationMsg;
 import com.xinbida.wukongim.interfaces.IRefreshConversationMsgList;
-import com.xinbida.wukongim.interfaces.ISyncConversationChat;
 import com.xinbida.wukongim.interfaces.ISyncConversationChatBack;
 import com.xinbida.wukongim.message.type.WKConnectStatus;
 import com.xinbida.wukongim.message.type.WKMsgContentType;
@@ -67,8 +67,7 @@ public class ConversationManager extends BaseManager {
 
     //移除某个会话
     private ConcurrentHashMap<String, IDeleteConversationMsg> iDeleteMsgList;
-    // 同步最近会话
-    private ISyncConversationChat iSyncConversationChat;
+
 
     /**
      * 查询会话记录消息
@@ -289,20 +288,13 @@ public class ConversationManager extends BaseManager {
     }
 
 
-    public void addOnSyncConversationListener(ISyncConversationChat iSyncConvChatListener) {
-        this.iSyncConversationChat = iSyncConvChatListener;
-    }
 
     public void setSyncConversationListener(ISyncConversationChatBack iSyncConversationChatBack) {
-        if (iSyncConversationChat != null) {
-            long version = ConversationDbManager.getInstance().queryMaxVersion();
-            String lastMsgSeqStr = ConversationDbManager.getInstance().queryLastMsgSeqs();
-            runOnMainThread(() -> iSyncConversationChat.syncConversationChat(lastMsgSeqStr, 10, version, syncChat -> {
-                dispatchQueuePool.execute(() -> saveSyncChat(syncChat, () -> iSyncConversationChatBack.onBack(syncChat)));
-            }));
-        } else {
-            WKLoggerUtils.getInstance().e("未设置同步最近会话事件");
-        }
+        long version = ConversationDbManager.getInstance().queryMaxVersion();
+        String lastMsgSeqStr = ConversationDbManager.getInstance().queryLastMsgSeqs();
+        runOnMainThread(() -> MsgModel.getInstance().syncChat(lastMsgSeqStr, 10, version, syncChat -> {
+            dispatchQueuePool.execute(() -> saveSyncChat(syncChat, () -> iSyncConversationChatBack.onBack(syncChat)));
+        }));
     }
 
 

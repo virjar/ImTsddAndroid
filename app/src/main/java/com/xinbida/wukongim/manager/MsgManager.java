@@ -1,16 +1,19 @@
 package com.xinbida.wukongim.manager;
 
 import android.text.TextUtils;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.chat.base.msgitem.WKContentType;
+import com.chat.uikit.chat.manager.WKSendMsgUtils;
+import com.chat.uikit.message.MsgModel;
 import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.WKIMApplication;
 import com.xinbida.wukongim.db.ConversationDbManager;
 import com.xinbida.wukongim.db.MsgDbManager;
 import com.xinbida.wukongim.db.WKDBColumns;
 import com.xinbida.wukongim.entity.WKChannel;
+import com.xinbida.wukongim.entity.WKChannelExtras;
 import com.xinbida.wukongim.entity.WKChannelType;
 import com.xinbida.wukongim.entity.WKConversationMsg;
 import com.xinbida.wukongim.entity.WKMentionInfo;
@@ -29,18 +32,14 @@ import com.xinbida.wukongim.entity.WKUIConversationMsg;
 import com.xinbida.wukongim.interfaces.IClearMsgListener;
 import com.xinbida.wukongim.interfaces.IDeleteMsgListener;
 import com.xinbida.wukongim.interfaces.IGetOrSyncHistoryMsgBack;
-import com.xinbida.wukongim.interfaces.IMessageStoreBeforeIntercept;
 import com.xinbida.wukongim.interfaces.INewMsgListener;
 import com.xinbida.wukongim.interfaces.IRefreshMsg;
 import com.xinbida.wukongim.interfaces.ISendACK;
 import com.xinbida.wukongim.interfaces.ISendMsgCallBackListener;
 import com.xinbida.wukongim.interfaces.ISyncChannelMsgBack;
-import com.xinbida.wukongim.interfaces.ISyncChannelMsgListener;
 import com.xinbida.wukongim.interfaces.ISyncOfflineMsgBack;
 import com.xinbida.wukongim.interfaces.ISyncOfflineMsgListener;
 import com.xinbida.wukongim.interfaces.IUploadAttacResultListener;
-import com.xinbida.wukongim.interfaces.IUploadAttachmentListener;
-import com.xinbida.wukongim.interfaces.IUploadMsgExtraListener;
 import com.xinbida.wukongim.message.MessageHandler;
 import com.xinbida.wukongim.message.WKConnection;
 import com.xinbida.wukongim.message.type.WKMsgContentType;
@@ -103,19 +102,11 @@ public class MsgManager extends BaseManager {
     private ConcurrentHashMap<String, INewMsgListener> newMsgListenerMap;
     // 清空消息
     private ConcurrentHashMap<String, IClearMsgListener> clearMsgMap;
-    // 上传文件附件
-    private IUploadAttachmentListener iUploadAttachmentListener;
     // 同步离线消息
     private ISyncOfflineMsgListener iOfflineMsgListener;
-    // 同步channel内消息
-    private ISyncChannelMsgListener iSyncChannelMsgListener;
 
-    // 消息存库拦截器
-    private IMessageStoreBeforeIntercept messageStoreBeforeIntercept;
     // 自定义消息model
     private List<java.lang.Class<? extends WKMessageContent>> customContentMsgList;
-    // 上传消息扩展
-    private IUploadMsgExtraListener iUploadMsgExtraListener;
     private Timer checkMsgNeedUploadTimer;
 
     // 初始化默认消息model
@@ -410,7 +401,7 @@ public class MsgManager extends BaseManager {
                 }
             }
         }
-        WKIM.getInstance().getConversationManager().setOnRefreshMsg(uiMsgList,"deleteWithClientMsgNOList");
+        WKIM.getInstance().getConversationManager().setOnRefreshMsg(uiMsgList, "deleteWithClientMsgNOList");
     }
 
     public List<WKMsg> getExpireMessages(int limit) {
@@ -932,20 +923,14 @@ public class MsgManager extends BaseManager {
     }
 
 
-    //监听同步频道消息
-    public void addOnSyncChannelMsgListener(ISyncChannelMsgListener listener) {
-        this.iSyncChannelMsgListener = listener;
-    }
-
     public void setSyncChannelMsgListener(String channelID, byte channelType, long startMessageSeq, long endMessageSeq, int limit, int pullMode, ISyncChannelMsgBack iSyncChannelMsgBack) {
-        if (this.iSyncChannelMsgListener != null) {
-            runOnMainThread(() -> iSyncChannelMsgListener.syncChannelMsgs(channelID, channelType, startMessageSeq, endMessageSeq, limit, pullMode, syncChannelMsg -> {
-                if (syncChannelMsg != null && WKCommonUtils.isNotEmpty(syncChannelMsg.messages)) {
-                    saveSyncChannelMSGs(syncChannelMsg.messages);
-                }
-                iSyncChannelMsgBack.onBack(syncChannelMsg);
-            }));
-        }
+        runOnMainThread(() -> MsgModel.getInstance().syncChannelMsg(channelID, channelType, startMessageSeq, endMessageSeq, limit, pullMode, syncChannelMsg -> {
+            if (syncChannelMsg != null && WKCommonUtils.isNotEmpty(syncChannelMsg.messages)) {
+                saveSyncChannelMSGs(syncChannelMsg.messages);
+            }
+            iSyncChannelMsgBack.onBack(syncChannelMsg);
+        }));
+
     }
 
     public void saveSyncChannelMSGs(List<WKSyncRecent> list) {
@@ -1007,25 +992,30 @@ public class MsgManager extends BaseManager {
         }
     }
 
-    public void addOnUploadAttachListener(IUploadAttachmentListener iUploadAttachmentListener) {
-        this.iUploadAttachmentListener = iUploadAttachmentListener;
-    }
-
     public void setUploadAttachment(WKMsg msg, IUploadAttacResultListener resultListener) {
-        if (iUploadAttachmentListener != null) {
-            runOnMainThread(() -> {
-                iUploadAttachmentListener.onUploadAttachmentListener(msg, resultListener);
-            });
+        runOnMainThread(() -> {
+            WKSendMsgUtils.getInstance().uploadChatAttachment(msg, resultListener);
+        });
+    }
+
+
+    public static boolean needSaveMsg(WKMsg msg) {
+        if (msg != null && msg.type == WKContentType.screenshot) {
+            WKChannel channel = WKIM.getInstance().getChannelManager().getChannel(msg.channelID, msg.channelType);
+            if (channel != null && channel.remoteExtraMap != null && channel.remoteExtraMap.containsKey(WKChannelExtras.screenshot)) {
+                Object object = channel.remoteExtraMap.get(WKChannelExtras.screenshot);
+                int screenshot = 0;
+                if (object != null) {
+                    screenshot = (int) object;
+                }
+                return screenshot != 0;
+            } else {
+                return true;
+            }
         }
+        return true;
     }
 
-    public void addMessageStoreBeforeIntercept(IMessageStoreBeforeIntercept iMessageStoreBeforeInterceptListener) {
-        messageStoreBeforeIntercept = iMessageStoreBeforeInterceptListener;
-    }
-
-    public boolean setMessageStoreBeforeIntercept(WKMsg msg) {
-        return messageStoreBeforeIntercept == null || messageStoreBeforeIntercept.isSaveMsg(msg);
-    }
 
     //添加消息修改
     public void addOnRefreshMsgListener(String key, IRefreshMsg listener) {
@@ -1209,9 +1199,7 @@ public class MsgManager extends BaseManager {
                 List<WKMsgExtra> list = MsgDbManager.getInstance().queryMsgExtraWithNeedUpload(1);
                 if (WKCommonUtils.isNotEmpty(list)) {
                     for (WKMsgExtra extra : list) {
-                        if (iUploadMsgExtraListener != null) {
-                            iUploadMsgExtraListener.onUpload(extra);
-                        }
+                        onUploadMsgExtra(extra);
                     }
                 } else {
                     checkMsgNeedUploadTimer.cancel();
@@ -1223,15 +1211,20 @@ public class MsgManager extends BaseManager {
     }
 
     private void setUploadMsgExtra(WKMsgExtra extra) {
-        if (iUploadMsgExtraListener != null) {
-            iUploadMsgExtraListener.onUpload(extra);
-        }
+        onUploadMsgExtra(extra);
         startCheckTimer();
     }
 
-    public void addOnUploadMsgExtraListener(IUploadMsgExtraListener iUploadMsgExtraListener) {
-        this.iUploadMsgExtraListener = iUploadMsgExtraListener;
+    public void onUploadMsgExtra(WKMsgExtra msgExtra) {
+        WKMsg msg = WKIM.getInstance().getMsgManager().getWithMessageID(msgExtra.messageID);
+        int msgSeq = 0;
+        if (msg != null) {
+            msgSeq = msg.messageSeq;
+        }
+        MsgModel.getInstance()
+                .editMsg(msgExtra.messageID, msgSeq, msgExtra.channelID, msgExtra.channelType, msgExtra.contentEdit, null);
     }
+
 
     public void pushNewMsg(List<WKMsg> wkMsgList) {
         if (newMsgListenerMap != null && !newMsgListenerMap.isEmpty()) {

@@ -11,11 +11,11 @@ import com.xinbida.wukongim.db.WKDBColumns;
 import com.xinbida.wukongim.entity.WKChannel;
 import com.xinbida.wukongim.entity.WKChannelExtras;
 import com.xinbida.wukongim.entity.WKChannelMember;
+import com.xinbida.wukongim.entity.WKChannelType;
 import com.xinbida.wukongim.interfaces.IAddChannelMemberListener;
 import com.xinbida.wukongim.interfaces.IGetChannelMemberListResult;
 import com.xinbida.wukongim.interfaces.IRefreshChannelMember;
 import com.xinbida.wukongim.interfaces.IRemoveChannelMember;
-import com.xinbida.wukongim.interfaces.ISyncChannelMembers;
 import com.xinbida.wukongim.utils.WKCommonUtils;
 
 import java.util.ArrayList;
@@ -42,7 +42,6 @@ public class ChannelMembersManager extends BaseManager {
     private ConcurrentHashMap<String, IRefreshChannelMember> refreshMemberMap;
     private ConcurrentHashMap<String, IRemoveChannelMember> removeChannelMemberMap;//监听添加频道成员
     private ConcurrentHashMap<String, IAddChannelMemberListener> addChannelMemberMap;
-    private ISyncChannelMembers syncChannelMembers;
 
 
     //最大版本成员
@@ -307,15 +306,12 @@ public class ChannelMembersManager extends BaseManager {
         }
     }
 
-    public void addOnSyncChannelMembers(ISyncChannelMembers syncChannelMembersListener) {
-        this.syncChannelMembers = syncChannelMembersListener;
-    }
 
     public void setOnSyncChannelMembers(String channelID, byte channelType) {
-        if (syncChannelMembers != null) {
-            runOnMainThread(() -> {
-                syncChannelMembers.onSyncChannelMembers(channelID, channelType);
-            });
-        }
+        runOnMainThread(() -> {
+            if (!TextUtils.isEmpty(channelID) && channelType == WKChannelType.GROUP) {
+                GroupModel.getInstance().groupMembersSync(channelID, null);
+            }
+        });
     }
 }
