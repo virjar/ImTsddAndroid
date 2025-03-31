@@ -20,7 +20,7 @@ import java.nio.BufferUnderflowException;
  * 2020-12-18 10:28
  * 连接客户端
  */
-class ConnectionClient implements IDataHandler, IConnectHandler,
+class ConnectionHandle implements IDataHandler, IConnectHandler,
         IDisconnectHandler, IConnectExceptionHandler,
         IConnectionTimeoutHandler, IIdleTimeoutHandler {
     private final String TAG = "ConnectionClient";
@@ -30,7 +30,7 @@ class ConnectionClient implements IDataHandler, IConnectHandler,
         void onResult(INonBlockingConnection iNonBlockingConnection);
     }
     IConnResult iConnResult;
-    ConnectionClient(IConnResult iConnResult) {
+    ConnectionHandle(IConnResult iConnResult) {
         this.iConnResult = iConnResult;
         isConnectSuccess = false;
     }
@@ -38,7 +38,7 @@ class ConnectionClient implements IDataHandler, IConnectHandler,
     @Override
     public boolean onConnectException(INonBlockingConnection iNonBlockingConnection, IOException e) {
         WKLoggerUtils.getInstance().e(TAG, "connection exception");
-        WKConnection.getInstance().forcedReconnection();
+        WKConnClient.getInstance().scheduleReconnect();
         close(iNonBlockingConnection);
         return true;
     }
@@ -55,7 +55,7 @@ class ConnectionClient implements IDataHandler, IConnectHandler,
     public boolean onConnectionTimeout(INonBlockingConnection iNonBlockingConnection) {
         if (!isConnectSuccess) {
             WKLoggerUtils.getInstance().e(TAG, "connection timeout");
-            WKConnection.getInstance().forcedReconnection();
+            WKConnClient.getInstance().scheduleReconnect();
         }
         return true;
     }
@@ -67,18 +67,18 @@ class ConnectionClient implements IDataHandler, IConnectHandler,
             if (id.toString().startsWith("close")) {
                 return true;
             }
-            if (!TextUtils.isEmpty(WKConnection.getInstance().socketSingleID) && !WKConnection.getInstance().socketSingleID.equals(id)) {
+            if (!TextUtils.isEmpty(WKConnClient.getInstance().socketSingleID) && !WKConnClient.getInstance().socketSingleID.equals(id)) {
                 WKLoggerUtils.getInstance().e(TAG, "onData method The received message ID does not match the connected ID");
                 try {
                     iNonBlockingConnection.close();
-                    if (WKConnection.getInstance().connection != null) {
-                        WKConnection.getInstance().connection.close();
+                    if (WKConnClient.getInstance().connection != null) {
+                        WKConnClient.getInstance().connection.close();
                     }
                 } catch (IOException e) {
                     WKLoggerUtils.getInstance().e(TAG, "onData close connection error");
                 }
                 if (WKIMApplication.getInstance().isCanConnect) {
-                    WKConnection.getInstance().forcedReconnection();
+                    WKConnClient.getInstance().scheduleReconnect();
                 }
                 return true;
             }
@@ -104,7 +104,7 @@ class ConnectionClient implements IDataHandler, IConnectHandler,
                 }
                 byte[] buffBytes = iNonBlockingConnection.readBytesByLength(readLen);
                 if (buffBytes.length > 0) {
-                    MessageHandler.getInstance().cutBytes(buffBytes,  WKConnection.getInstance());
+                    MessageHandler.getInstance().cutBytes(buffBytes,  WKConnClient.getInstance());
                 }
             }
 
@@ -133,7 +133,7 @@ class ConnectionClient implements IDataHandler, IConnectHandler,
             }
             if (WKIMApplication.getInstance().isCanConnect) {
                 WKLoggerUtils.getInstance().e("手动关闭需要重连");
-                WKConnection.getInstance().forcedReconnection();
+                WKConnClient.getInstance().scheduleReconnect();
             } else {
                 WKLoggerUtils.getInstance().e(TAG, "No reconnection allowed");
             }
@@ -149,7 +149,7 @@ class ConnectionClient implements IDataHandler, IConnectHandler,
     public boolean onIdleTimeout(INonBlockingConnection iNonBlockingConnection) {
         if (!isConnectSuccess) {
             WKLoggerUtils.getInstance().e(TAG, "Idle timeout");
-            WKConnection.getInstance().forcedReconnection();
+            WKConnClient.getInstance().scheduleReconnect();
             close(iNonBlockingConnection);
         }
         return true;

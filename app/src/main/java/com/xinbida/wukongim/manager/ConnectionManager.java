@@ -7,7 +7,7 @@ import com.xinbida.wukongim.WKIM;
 import com.xinbida.wukongim.WKIMApplication;
 import com.xinbida.wukongim.interfaces.IConnectionStatus;
 import com.xinbida.wukongim.message.MessageHandler;
-import com.xinbida.wukongim.message.WKConnection;
+import com.xinbida.wukongim.message.WKConnClient;
 import com.xinbida.wukongim.utils.WKLoggerUtils;
 
 import java.util.Map;
@@ -42,8 +42,8 @@ public class ConnectionManager extends BaseManager {
             return;
         }
         WKIMApplication.getInstance().isCanConnect = true;
-        if (WKConnection.getInstance().connectionIsNull()) {
-            WKConnection.getInstance().reconnection();
+        if (WKConnClient.getInstance().connectionIsNull()) {
+            WKConnClient.getInstance().reconnection();
         }
     }
 
@@ -63,7 +63,7 @@ public class ConnectionManager extends BaseManager {
      */
     private void stopConnect() {
         WKIMApplication.getInstance().isCanConnect = false;
-        WKConnection.getInstance().stopAll();
+        WKConnClient.getInstance().stopAll();
     }
 
     /**
@@ -76,23 +76,13 @@ public class ConnectionManager extends BaseManager {
 
         WKIMApplication.getInstance().setToken("");
         MessageHandler.getInstance().updateLastSendingMsgFail();
-        WKConnection.getInstance().stopAll();
+        WKConnClient.getInstance().stopAll();
         WKIM.getInstance().getChannelManager().clearARMCache();
         WKIMApplication.getInstance().closeDbHelper();
     }
 
     public interface IRequestIP {
         void onResult(String requestId, String ip, int port);
-    }
-
-    public void getIpAndPort(String requestId, IRequestIP iRequestIP) {
-        WKLoggerUtils.getInstance().e(TAG, "getIpAndPort get ip...");
-        runOnMainThread(new ICheckThreadBack() {
-            @Override
-            public void onMainThread() {
-                MsgModel.getInstance().getChatIp(requestId, iRequestIP);
-            }
-        });
     }
 
 

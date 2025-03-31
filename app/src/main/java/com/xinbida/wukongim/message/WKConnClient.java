@@ -18,7 +18,6 @@ import com.xinbida.wukongim.entity.WKMsgSetting;
 import com.xinbida.wukongim.entity.WKSyncMsgMode;
 import com.xinbida.wukongim.entity.WKUIConversationMsg;
 import com.xinbida.wukongim.manager.BaseManager;
-import com.xinbida.wukongim.manager.ConnectionManager;
 import com.xinbida.wukongim.message.type.WKConnectReason;
 import com.xinbida.wukongim.message.type.WKConnectStatus;
 import com.xinbida.wukongim.message.type.WKMsgType;
@@ -56,17 +55,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * 5/21/21 10:51 AM
  * IM connect
  */
-public class WKConnection {
+public class WKConnClient {
     private final String TAG = "WKConnection";
 
-    private WKConnection() {
+    private WKConnClient() {
     }
 
     private static class ConnectHandleBinder {
-        private static final WKConnection CONNECT = new WKConnection();
+        private static final WKConnClient CONNECT = new WKConnClient();
     }
 
-    public static WKConnection getInstance() {
+    public static WKConnClient getInstance() {
         return ConnectHandleBinder.CONNECT;
     }
 
@@ -81,7 +80,7 @@ public class WKConnection {
     private String ip;
     private int port;
     volatile INonBlockingConnection connection;
-    volatile ConnectionClient connectionClient;
+    volatile ConnectionHandle connectionHandle;
     private long requestIPTime;
     private long connAckTime;
     private final long requestIPTimeoutTime = 6;
@@ -90,11 +89,10 @@ public class WKConnection {
     private String lastRequestId;
     private int unReceivePongCount = 0;
     public volatile Handler reconnectionHandler = new Handler(Objects.requireNonNull(Looper.myLooper()));
-    //    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     Runnable reconnectionRunnable = this::reconnection;
     private int connCount = 0;
 
-    public synchronized void forcedReconnection() {
+    public synchronized void scheduleReconnect() {
         connCount++;
         isReConnecting = false;
         requestIPTime = 0;
@@ -119,16 +117,16 @@ public class WKConnection {
             closeConnect();
             isReConnecting = true;
             requestIPTime = DateUtils.getInstance().getCurrentSeconds();
-            getConnAddress();
+            requestIpAddrAndConnect();
         } else {
             if (!WKTimers.getInstance().checkNetWorkTimerIsRunning) {
                 WKIM.getInstance().getConnectionManager().setConnectionStatus(WKConnectStatus.noNetwork, WKConnectReason.NoNetwork);
-                forcedReconnection();
+                scheduleReconnect();
             }
         }
     }
 
-    private synchronized void getConnAddress() {
+    private synchronized void requestIpAddrAndConnect() {
         if (!WKIMApplication.getInstance().isCanConnect) {
             WKLoggerUtils.getInstance().e(TAG, "SDK determines that reconnection is not possible");
             stopAll();
@@ -140,30 +138,25 @@ public class WKConnection {
         lastRequestId = UUID.randomUUID().toString().replace("-", "");
 
         WKLoggerUtils.getInstance().e(TAG, "getIpAndPort get ip...");
-        BaseManager.runOnMainThread(new BaseManager.ICheckThreadBack() {
-            @Override
-            public void onMainThread() {
-                MsgModel.getInstance().getChatIp(lastRequestId, (requestId, ip, port) -> {
-                    WKLoggerUtils.getInstance().e(TAG, "connection address " + ip + ":" + port);
-                    if (TextUtils.isEmpty(ip) || port == 0) {
-                        WKLoggerUtils.getInstance().e(TAG, "Return connection IP or port error，" + String.format("ip:%s & port:%s", ip, port));
-                        isReConnecting = false;
-                        forcedReconnection();
-                        return;
-                    }
-                    if (lastRequestId.equals(requestId)) {
-                        WKConnection.this.ip = ip;
-                        WKConnection.this.port = port;
-                        if (connectionIsNull()) {
-                            connSocket();
-                        }
-                        return;
-                    }
-                    if (connectionIsNull()) {
-                        WKLoggerUtils.getInstance().e(TAG, "The IP number requested is inconsistent, reconnecting");
-                        forcedReconnection();
-                    }
-                });
+        MsgModel.getInstance().getChatIp(lastRequestId, (requestId, ip, port) -> {
+            WKLoggerUtils.getInstance().e(TAG, "connection address " + ip + ":" + port);
+            if (TextUtils.isEmpty(ip) || port == 0) {
+                WKLoggerUtils.getInstance().e(TAG, "Return connection IP or port error，" + String.format("ip:%s & port:%s", ip, port));
+                isReConnecting = false;
+                scheduleReconnect();
+                return;
+            }
+            if (lastRequestId.equals(requestId)) {
+                WKConnClient.this.ip = ip;
+                WKConnClient.this.port = port;
+                if (connectionIsNull()) {
+                    connSocket();
+                }
+                return;
+            }
+            if (connectionIsNull()) {
+                WKLoggerUtils.getInstance().e(TAG, "The IP number requested is inconsistent, reconnecting");
+                scheduleReconnect();
             }
         });
     }
@@ -171,17 +164,17 @@ public class WKConnection {
     private synchronized void connSocket() {
         closeConnect();
         socketSingleID = UUID.randomUUID().toString().replace("-", "");
-        connectionClient = new ConnectionClient(iNonBlockingConnection -> {
+        connectionHandle = new ConnectionHandle(iNonBlockingConnection -> {
             connCount = 0;
             if (iNonBlockingConnection == null || connection == null || !connection.getId().equals(iNonBlockingConnection.getId())) {
                 WKLoggerUtils.getInstance().e(TAG, "重复连接");
-                forcedReconnection();
+                scheduleReconnect();
                 return;
             }
             Object att = iNonBlockingConnection.getAttachment();
             if (att == null || !att.equals(socketSingleID)) {
                 WKLoggerUtils.getInstance().e(TAG, "不属于当前连接");
-                forcedReconnection();
+                scheduleReconnect();
                 return;
             }
             connection.setIdleTimeoutMillis(1000 * 3);
@@ -190,16 +183,16 @@ public class WKConnection {
             isReConnecting = false;
             if (connection != null)
                 connection.setAutoflush(true);
-            WKConnection.getInstance().sendConnectMsg();
+            WKConnClient.getInstance().sendConnectMsg();
         });
         dispatchQueuePool.execute(() -> {
             try {
-                connection = new NonBlockingConnection(ip, port, connectionClient);
+                connection = new NonBlockingConnection(ip, port, connectionHandle);
                 connection.setAttachment(socketSingleID);
             } catch (IOException e) {
                 isReConnecting = false;
                 WKLoggerUtils.getInstance().e(TAG, "connection exception:" + e.getMessage());
-                forcedReconnection();
+                scheduleReconnect();
             }
         });
     }
@@ -333,7 +326,7 @@ public class WKConnection {
     // 查看心跳是否超时
     void checkHeartIsTimeOut() {
         if (unReceivePongCount >= 5) {
-            forcedReconnection();
+            scheduleReconnect();
             return;
         }
         long nowTime = DateUtils.getInstance().getCurrentSeconds();
@@ -494,7 +487,7 @@ public class WKConnection {
     }
 
     public void stopAll() {
-        connectionClient = null;
+        connectionHandle = null;
         WKTimers.getInstance().stopAll();
         closeConnect();
         connectStatus = WKConnectStatus.fail;
@@ -513,7 +506,7 @@ public class WKConnection {
                 WKLoggerUtils.getInstance().e("stop connection IOException" + e.getMessage());
             } finally {
                 connection = null;
-                connectionClient = null;
+                connectionHandle = null;
             }
         }
     }

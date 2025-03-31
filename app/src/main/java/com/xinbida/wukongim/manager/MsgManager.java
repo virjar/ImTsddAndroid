@@ -41,7 +41,7 @@ import com.xinbida.wukongim.interfaces.ISyncOfflineMsgBack;
 import com.xinbida.wukongim.interfaces.ISyncOfflineMsgListener;
 import com.xinbida.wukongim.interfaces.IUploadAttacResultListener;
 import com.xinbida.wukongim.message.MessageHandler;
-import com.xinbida.wukongim.message.WKConnection;
+import com.xinbida.wukongim.message.WKConnClient;
 import com.xinbida.wukongim.message.type.WKMsgContentType;
 import com.xinbida.wukongim.message.type.WKSendMsgResult;
 import com.xinbida.wukongim.msgmodel.WKFormatErrorContent;
@@ -1285,7 +1285,7 @@ public class MsgManager extends BaseManager {
      * @param msg 消息对象
      */
     public void sendMessage(@NonNull WKMsg msg) {
-        WKConnection.getInstance().sendMessage(msg);
+        WKConnClient.getInstance().sendMessage(msg);
     }
 
     /**

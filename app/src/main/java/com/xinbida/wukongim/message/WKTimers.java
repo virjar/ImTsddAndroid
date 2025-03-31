@@ -86,7 +86,7 @@ class WKTimers {
             @Override
             public void run() {
                 //发送心跳
-                WKConnection.getInstance().sendMessage(new WKPingMsg());
+                WKConnClient.getInstance().sendMessage(new WKPingMsg());
             }
         }, 0, heart_time * 1000);
     }
@@ -99,10 +99,10 @@ class WKTimers {
 
             @Override
             public void run() {
-                if (WKConnection.getInstance().connection == null || heartBeatTimer == null) {
-                    WKConnection.getInstance().reconnection();
+                if (WKConnClient.getInstance().connection == null || heartBeatTimer == null) {
+                    WKConnClient.getInstance().reconnection();
                 }
-                WKConnection.getInstance().checkHeartIsTimeOut();
+                WKConnClient.getInstance().checkHeartIsTimeOut();
             }
         }, 1000 * 7, 1000 * 7);
     }
@@ -121,16 +121,16 @@ class WKTimers {
                     isForcedReconnect = true;
                     WKIM.getInstance().getConnectionManager().setConnectionStatus(WKConnectStatus.noNetwork, WKConnectReason.NoNetwork);
                     WKLoggerUtils.getInstance().e("No network connection...");
-                    WKConnection.getInstance().checkSendingMsg();
+                    WKConnClient.getInstance().checkSendingMsg();
                 } else {
                     //有网络
-                    if (WKConnection.getInstance().connectionIsNull() || isForcedReconnect  ) {
-                        WKConnection.getInstance().reconnection();
+                    if (WKConnClient.getInstance().connectionIsNull() || isForcedReconnect  ) {
+                        WKConnClient.getInstance().reconnection();
                         isForcedReconnect = false;
                     }
                 }
-                if (WKConnection.getInstance().connection == null || !WKConnection.getInstance().connection.isOpen()) {
-                    WKConnection.getInstance().reconnection();
+                if (WKConnClient.getInstance().connection == null || !WKConnClient.getInstance().connection.isOpen()) {
+                    WKConnClient.getInstance().reconnection();
                 }
                 checkNetWorkTimerIsRunning = true;
             }

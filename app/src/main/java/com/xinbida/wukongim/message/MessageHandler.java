@@ -15,7 +15,6 @@ import com.xinbida.wukongim.message.type.WKMsgContentType;
 import com.xinbida.wukongim.message.type.WKMsgType;
 import com.xinbida.wukongim.protocol.WKBaseMsg;
 import com.xinbida.wukongim.protocol.WKConnectAckMsg;
-import com.xinbida.wukongim.protocol.WKDisconnectMsg;
 import com.xinbida.wukongim.protocol.WKReceivedAckMsg;
 import com.xinbida.wukongim.protocol.WKSendAckMsg;
 import com.xinbida.wukongim.utils.WKCommonUtils;
@@ -98,7 +97,7 @@ public class MessageHandler {
     private List<WKSyncMsg> receivedMsgList;
     private byte[] cacheData = null;
 
-    synchronized void cutBytes(byte[] available_bytes, WKConnection wkConnection) {
+    synchronized void cutBytes(byte[] available_bytes, WKConnClient wkConnClient) {
 
         if (cacheData == null || cacheData.length == 0) cacheData = available_bytes;
         else {
@@ -131,7 +130,7 @@ public class MessageHandler {
             WKLoggerUtils.getInstance().e(TAG, "packet type" + packetType);
             if (packetType == WKMsgType.PONG) {
                 //心跳ack
-                wkConnection.pongMsg();
+                wkConnClient.pongMsg();
                 WKLoggerUtils.getInstance().e(TAG, "pong...");
                 byte[] bytes = Arrays.copyOfRange(lastMsgBytes, 1, lastMsgBytes.length);
                 cacheData = lastMsgBytes = bytes;
@@ -159,14 +158,14 @@ public class MessageHandler {
                         cacheData = lastMsgBytes;
                     } else {
                         byte[] msg = Arrays.copyOfRange(lastMsgBytes, 0, remainingLength + 1 + bytes.length);
-                        acceptMsg(msg, no_persist, sync_once, red_dot, wkConnection);
+                        acceptMsg(msg, no_persist, sync_once, red_dot, wkConnClient);
                         byte[] temps = Arrays.copyOfRange(lastMsgBytes, msg.length, lastMsgBytes.length);
                         cacheData = lastMsgBytes = temps;
                     }
 
                 } else {
                     cacheData = null;
-                    wkConnection.reconnect();
+                    wkConnClient.reconnect();
                     break;
                 }
             }
@@ -175,7 +174,7 @@ public class MessageHandler {
     }
 
     private void acceptMsg(byte[] bytes, int no_persist, int sync_once, int red_dot,
-                           WKConnection wkConnection) {
+                           WKConnClient wkConnClient) {
 
         if (bytes != null && bytes.length > 0) {
             WKBaseMsg g_msg;
@@ -184,7 +183,7 @@ public class MessageHandler {
                 //连接ack
                 if (g_msg.packetType == WKMsgType.CONNACK) {
                     WKConnectAckMsg loginStatusMsg = (WKConnectAckMsg) g_msg;
-                    wkConnection.loginStatusMsg(loginStatusMsg.reasonCode);
+                    wkConnClient.loginStatusMsg(loginStatusMsg.reasonCode);
                 } else if (g_msg.packetType == WKMsgType.SENDACK) {
                     //发送ack
                     WKSendAckMsg sendAckMsg = (WKSendAckMsg) g_msg;
@@ -201,7 +200,7 @@ public class MessageHandler {
                     }
                     WKIM.getInstance().getMsgManager().setSendMsgAck(wkMsg);
 
-                    wkConnection.sendAckMsg(sendAckMsg);
+                    wkConnClient.sendAckMsg(sendAckMsg);
                 } else if (g_msg.packetType == WKMsgType.RECEIVED) {
                     //收到消息
                     WKMsg message = WKProto.getInstance().baseMsg2WKMsg(g_msg);
@@ -212,9 +211,9 @@ public class MessageHandler {
                     // mIReceivedMsgListener.receiveMsg(message);
                 } else if (g_msg.packetType == WKMsgType.DISCONNECT) {
                     //被踢消息
-                    wkConnection.kickMsg();
+                    wkConnClient.kickMsg();
                 } else if (g_msg.packetType == WKMsgType.PONG) {
-                    wkConnection.pongMsg();
+                    wkConnClient.pongMsg();
                 }
             }
         }
@@ -226,7 +225,7 @@ public class MessageHandler {
             addReceivedMsg(message);
         } else {
             WKReceivedAckMsg receivedAckMsg = getReceivedAckMsg(message);
-            WKConnection.getInstance().sendMessage(receivedAckMsg);
+            WKConnClient.getInstance().sendMessage(receivedAckMsg);
         }
     }
 
@@ -266,7 +265,7 @@ public class MessageHandler {
     //回复消息ack
     private void sendAck(List<WKReceivedAckMsg> list) {
         if (list.size() == 1) {
-            WKConnection.getInstance().sendMessage(list.get(0));
+            WKConnClient.getInstance().sendMessage(list.get(0));
             return;
         }
         final Timer sendAckTimer = new Timer();
@@ -274,7 +273,7 @@ public class MessageHandler {
             @Override
             public void run() {
                 if (WKCommonUtils.isNotEmpty(list)) {
-                    WKConnection.getInstance().sendMessage(list.get(0));
+                    WKConnClient.getInstance().sendMessage(list.get(0));
                     list.remove(0);
                 } else {
                     sendAckTimer.cancel();
